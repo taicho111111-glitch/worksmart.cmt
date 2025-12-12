@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRM Segmentation Dashboard</title>
+  <style>
+    :root{
+      --bg:#0a0f1a;
+      --text:#0b1220;
+      --text2:#0f172a;
+      --muted:#526179;
+      --line:rgba(15,23,42,.12);
+
+      --glass:rgba(255,255,255,.62);
+      --glass2:rgba(255,255,255,.48);
+      --shadow:0 18px 45px rgba(2, 6, 23, .18);
+
+      --accent:#0ea5e9;
+      --accent2:#22c55e;
+
+      --gold:#b08d57;
+      --gold2:#d6c39b;
+
+      --radius:18px;
+      --radius2:14px;
+
+      font-synthesis-weight:none;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text2);
+      min-height:100vh;
+
+      /* Brighter, luxe background */
+      background:
+        radial-gradient(1200px 700px at 18% 8%, rgba(14,165,233,.18), transparent 60%),
+        radial-gradient(900px 650px at 82% 18%, rgba(34,197,94,.14), transparent 55%),
+        radial-gradient(1100px 800px at 55% 90%, rgba(176,141,87,.16), transparent 60%),
+        linear-gradient(180deg, #f5f7fb 0%, #eef2f7 45%, #f6f8fc 100%);
+    }
+
+    .wrap{
+      max-width:1180px;
+      margin:0 auto;
+      padding:28px 18px 60px;
+    }
+
+    header{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:16px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    h1{
+      font-size:22px;
+      margin:0;
+      letter-spacing:.2px;
+      line-height:1.25;
+      color:#0b1220;
+    }
+    .subtitle{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+      max-width:720px;
+    }
+
+    .top-actions{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      background:linear-gradient(180deg, rgba(255,255,255,.70), rgba(255,255,255,.44));
+      border:1px solid rgba(15,23,42,.12);
+      color:#0f172a;
+      padding:9px 10px;
+      border-radius:999px;
+      font-size:12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      box-shadow: var(--shadow);
+      white-space:nowrap;
+      backdrop-filter: blur(10px);
+    }
+    .pill b{color:var(--gold); font-weight:700}
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      margin-top:14px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+      header{flex-direction:column; align-items:flex-start}
+      .top-actions{justify-content:flex-start}
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--glass), var(--glass2));
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .card .head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .card .head h2{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.3px;
+      color:#0b1220;
+    }
+    .muted{color:var(--muted)}
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:flex-end;
+    }
+    label{
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:240px;
+    }
+
+    select{
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(15,23,42,.14);
+      color:#0b1220;
+      padding:10px 12px;
+      border-radius:12px;
+      outline:none;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.65);
+    }
+    select:focus{
+      border-color: rgba(14,165,233,.45);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.12), inset 0 0 0 1px rgba(255,255,255,.65);
+    }
+
+    .kpi-row{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (max-width: 540px){
+      .kpi-row{grid-template-columns:1fr}
+      label{min-width: 100%}
+    }
+
+    .kpi{
+      background:rgba(255,255,255,.66);
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:16px;
+      padding:12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .kpi:before{
+      content:"";
+      position:absolute;
+      inset:-1px;
+      background: radial-gradient(900px 300px at 10% 0%, rgba(176,141,87,.14), transparent 55%),
+                  radial-gradient(700px 220px at 90% 0%, rgba(14,165,233,.12), transparent 50%);
+      pointer-events:none;
+    }
+    .kpi .label{
+      color:var(--muted);
+      font-size:11px;
+      margin-bottom:6px;
+      position:relative;
+      z-index:1;
+    }
+    .kpi .value{
+      font-weight:720;
+      font-size:13px;
+      line-height:1.35;
+      color:#0b1220;
+      position:relative;
+      z-index:1;
+    }
+
+    .two-col{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+    @media (max-width: 980px){
+      .two-col{grid-template-columns:1fr}
+    }
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:8px;
+    }
+    .item{
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.60);
+      border-radius:14px;
+      padding:10px 11px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .item .name{
+      font-size:13px;
+      font-weight:700;
+      margin:0;
+      color:#0b1220;
+    }
+    .item .desc{
+      margin:4px 0 0;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+
+    .badge{
+      font-size:11px;
+      padding:6px 9px;
+      border-radius:999px;
+      background:rgba(14,165,233,.10);
+      border:1px solid rgba(14,165,233,.18);
+      color:#0b1220;
+      white-space:nowrap;
+    }
+    .badge.good{background:rgba(34,197,94,.10); border-color:rgba(34,197,94,.18)}
+    .badge.warn{background:rgba(176,141,87,.12); border-color:rgba(176,141,87,.20)}
+    .badge.bad{background:rgba(244,63,94,.10); border-color:rgba(244,63,94,.18)}
+
+    .rec{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .recbox{
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.60);
+      border-radius:16px;
+      padding:12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .recbox:before{
+      content:"";
+      position:absolute;
+      top:-80px; right:-120px;
+      width:260px; height:260px;
+      background: radial-gradient(circle at 30% 30%, rgba(214,195,155,.28), rgba(214,195,155,0) 62%);
+      transform: rotate(18deg);
+      pointer-events:none;
+    }
+    .recbox h3{
+      margin:0 0 8px;
+      font-size:13px;
+      letter-spacing:.2px;
+      color:#0b1220;
+      position:relative;
+      z-index:1;
+    }
+    .recbox ul{
+      margin:0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+      position:relative;
+      z-index:1;
+    }
+
+    .footer-note{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.55;
+      opacity:.95;
+    }
+    .small{
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .btn{
+      border:1px solid rgba(15,23,42,.12);
+      background:linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,.56));
+      color:#0b1220;
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:12px;
+      transition:.15s ease;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(0px)}
+    .copy-ok{
+      display:none;
+      margin-left:8px;
+      color:rgba(22,163,74,.95);
+      font-size:12px;
+      font-weight:700;
+    }
+
+    /* Small luxe divider */
+    .gold-line{
+      height:1px;
+      background:linear-gradient(90deg, transparent, rgba(176,141,87,.45), transparent);
+      margin:10px 0 2px;
+      border-radius:999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>CRM Segmentation Dashboard</h1>
+        <div class="subtitle">
+          เลือก <b>Industry</b> และ <b>Axis</b> เพื่อดู Segment ที่เหมาะกับ Marketing Automation + คำแนะนำเชิงกลยุทธ์
+          <span style="color:#6b7280;">(Birth Month อยู่ใน Improve Engagement ทุกอุตสาหกรรม)</span>
+        </div>
+        <div class="gold-line"></div>
+      </div>
+      <div class="top-actions">
+        <div class="pill">Axis: <b id="pillAxis">Acquisition</b></div>
+        <div class="pill">Industry: <b id="pillIndustry">FMCG</b></div>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="head">
+        <h2>Controls</h2>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button class="btn" id="btnCopy">Copy current view</button>
+          <span class="copy-ok" id="copyOk">Copied ✓</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label>
+          Industry
+          <select id="industrySelect"></select>
+        </label>
+
+        <label>
+          Axis
+          <select id="axisSelect">
+            <option>Acquisition</option>
+            <option>Improve Engagement</option>
+            <option>Redemption</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="kpi-row" id="kpiRow"></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="head">
+          <h2>Segments</h2>
+          <div class="muted" id="segCount">0 segments</div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="small">Included in this axis</div>
+            <div class="list" id="segmentList"></div>
+          </div>
+          <div>
+            <div class="small">Notes</div>
+            <div class="recbox">
+              <h3 id="axisNoteTitle">How to use this axis</h3>
+              <ul id="axisNotes"></ul>
+            </div>
+            <div class="footer-note" id="industryHint"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="head">
+          <h2>Recommended</h2>
+          <div class="muted">Playbook ideas</div>
+        </div>
+
+        <div class="rec" id="recommendation"></div>
+
+        <div class="footer-note">
+          Tip: ใช้ปุ่ม Copy เพื่อเอาเนื้อหาไปใส่สไลด์/อีเมลได้ทันที
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const industries = [
+    "Agriculture","Airline","Appliance","Automotive","B2B","Bank","Construction","F&B",
+    "Fashion & Beauty","FMCG","FMCG - Supplement","Health&Wellness","Hospital","Insurance",
+    "Investment","Jewely","Land Developer","Leasing","Miscellaneous","Oil&Gas","Pet Product",
+    "Petrol","Restaurant","Retail","Retail - Shopping Mall","TelCo"
+  ];
+
+  const data = {
+    "Agriculture":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Last Earn XX Days","Top Spending","Birth Month"],
+      "Redemption":["Point on Hands","Point Expire"]
+    },
+    "Airline":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase (Last Flight)","Earn Only X Time","Top Spending","Birth Month"],
+      "Redemption":["Point on Hands","Point Expire","Last Redeem XX Days"]
+    },
+    "Appliance":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Last Earn XX Days","Birth Month"],
+      "Redemption":["Point Expire","Never Redeem"]
+    },
+    "Automotive":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase (Service Date)","Last Earn XX Days","Top Spending","Birth Month"],
+      "Redemption":["Point Expire","Never Redeem"]
+    },
+    "B2B":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Last Earn XX Days","Top Spending","Birth Month"],
+      "Redemption":["Point on Hands","Point Expire"]
+    },
+    "Bank":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Transaction","Birth Month"],
+      "Redemption":["Point Expire","Never Redeem"]
+    },
+    "Construction":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Top Spending","Birth Month"],
+      "Redemption":["Point Expire"]
+    },
+    "F&B":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Earn XX Days","Last Purchase","Birth Month"],
+      "Redemption":["Point on Hands","Last Redeem XX Days"]
+    },
+    "Fashion & Beauty":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Top Spending","Birth Month"],
+      "Redemption":["Point on Hands","Last Redeem XX Days"]
+    },
+    "FMCG":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Earn XX Days","Birth Month"],
+      "Redemption":["Point on Hands","Point Expire","Never Redeem"]
+    },
+    "FMCG - Supplement":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Last Earn XX Days","Birth Month"],
+      "Redemption":["Point Expire","Never Redeem"]
+    },
+    "Health&Wellness":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Last Earn XX Days","Earn Only X Time","Birth Month"],
+      "Redemption":["Point on Hands"]
+    },
+    "Hospital":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Visit","Inactive User","Birth Month"],
+      "Redemption":["Privilege / Benefit Redeem"]
+    },
+    "Insurance":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase (Policy Date)","Inactive User","Birth Month"],
+      "Redemption":["Privilege / Service Redeem"]
+    },
+    "Investment":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Transaction","Top Spending","Birth Month"],
+      "Redemption":["Privilege-based Redeem"]
+    },
+    "Jewely":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Top Spending","Birth Month"],
+      "Redemption":["Last Redeem XX Days"]
+    },
+    "Land Developer":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Interaction","Birth Month"],
+      "Redemption":["Privilege-based"]
+    },
+    "Leasing":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Payment","Inactive User","Birth Month"],
+      "Redemption":["Privilege / Fee Benefit"]
+    },
+    "Miscellaneous":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Birth Month"],
+      "Redemption":["Point on Hands"]
+    },
+    "Oil&Gas":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Top Spending","Birth Month"],
+      "Redemption":["Privilege Redeem"]
+    },
+    "Pet Product":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Earn XX Days","Birth Month (Pet Owner)"],
+      "Redemption":["Point Expire","Never Redeem"]
+    },
+    "Petrol":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Birth Month"],
+      "Redemption":["Point Expire"]
+    },
+    "Restaurant":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Visit","Birth Month"],
+      "Redemption":["Last Redeem XX Days"]
+    },
+    "Retail":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Top Spending","Birth Month"],
+      "Redemption":["Point on Hands"]
+    },
+    "Retail - Shopping Mall":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Birth Month"],
+      "Redemption":["Point Expire","Never Redeem"]
+    },
+    "TelCo":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Payment","Birth Month"],
+      "Redemption":["Point Expire"]
+    }
+  };
+
+  const segmentMeaning = {
+    "New User":"Registered ใหม่ (กำหนด X วัน) เป้าหมายคือให้เกิด First Action",
+    "Inactive User":"มีบัญชี/เคย active แต่เงียบไป (กำหนด X วัน)",
+    "Last Earn XX Days":"ไม่ได้สะสมแต้ม/ทำ Earn มาเกิน X วัน (เคย Earn แล้ว)",
+    "Earn Only X Time":"สะสมแต้มเพียง 1–6 ครั้ง ยังไม่เกิด habit",
+    "Point on Hands":"มีแต้มคงเหลือ ≥ threshold แต่ยังไม่ใช้",
+    "Point Expire":"แต้มใกล้หมดอายุภายใน X วัน (urgency)",
+    "Never Redeem":"เคย Earn แต่ไม่เคยแลกเลย",
+    "Last Redeem XX Days":"เคยแลก แต่หยุดแลกมานาน X วัน",
+    "Last Purchase":"ห่างจากการซื้อครั้งล่าสุดเกิน X วัน (หรือใช้ Earn Date แทนได้)",
+    "Top Spending":"กลุ่มมูลค่าสูง (Top X% / Top N)",
+    "Birth Month":"Soft retention trigger เดือนเกิด (เน้นความสัมพันธ์ ไม่ใช่ขายหนัก)",
+    "Last Transaction":"ธุรกรรมล่าสุดเกิน X วัน (ใช้กับ bank/investment)",
+    "Last Payment":"การชำระล่าสุดเกิน X วัน (telco/leasing)",
+    "Last Visit":"การเข้ารับบริการ/visit ล่าสุดเกิน X วัน",
+    "Last Interaction":"lead interaction ล่าสุดเกิน X วัน (land developer)",
+    "Privilege / Benefit Redeem":"การใช้สิทธิ/สิทธิประโยชน์ (แทน point ได้)",
+    "Privilege / Service Redeem":"การใช้สิทธิบริการ/ส่วนลดบริการ",
+    "Privilege-based Redeem":"การใช้สิทธิแบบ non-point",
+    "Privilege-based":"สิทธิ/สิทธิพิเศษแบบไม่ผูกแต้ม",
+    "Privilege / Fee Benefit":"สิทธิช่วยค่าธรรมเนียม/benefit",
+    "Privilege Redeem":"การใช้สิทธิ (generic)",
+    "Last Purchase (Last Flight)":"การเดินทางล่าสุดเกิน X วัน",
+    "Last Purchase (Service Date)":"วันเข้าศูนย์/เข้ารับบริการล่าสุดเกิน X วัน",
+    "Last Purchase (Policy Date)":"วันซื้อ/ต่อกรมธรรม์ล่าสุดเกิน X วัน",
+    "Birth Month (Pet Owner)":"เดือนเกิดเจ้าของสัตว์/ตั้งเป็น Pet Day ได้"
+  };
+
+  const axisMeta = {
+    "Acquisition":{
+      kpis:["Register Rate","First Action (First Earn / First Txn)","Activation Rate (D7/D30)"],
+      notes:[
+        "เน้นลด friction ของการเริ่มต้น (register → first action)",
+        "ให้ benefit แบบ “พอเหมาะ” เพื่อดัน first action ไม่ใช่แจกจนติดนิสัย",
+        "ถ้า data อนุญาต แยก New User เป็น: never earn vs first earn แล้ว"
+      ],
+      recTitle:"Acquisition playbook (recommended)"
+    },
+    "Improve Engagement":{
+      kpis:["Repeat Rate / Frequency","Time Between Purchase","Retention (M2/M3)"],
+      notes:[
+        "โฟกัสการกลับมา (cadence) มากกว่ายอดครั้งเดียว",
+        "ใช้ timing + habit loop (เช่น X วันหลัง last earn/purchase)",
+        "Birth Month = soft touch: ใช้เพื่อ warm-up ไม่ hard sell"
+      ],
+      recTitle:"Engagement playbook (recommended)"
+    },
+    "Redemption":{
+      kpis:["Burn Rate","Redeem Conversion","Revisit after Redeem (D7/D30)"],
+      notes:[
+        "ทำให้แต้ม/สิทธิ “มีค่าและถูกใช้” เพื่อปิด loop ของ loyalty",
+        "อย่าแค่แจ้งหมดอายุ: ต้องมี ‘ทางเลือกแลกง่าย’ + ‘ของที่ตรงใจ’",
+        "วัดผลหลังการแลก: คนกลับมาซื้อ/visit ไหม"
+      ],
+      recTitle:"Redemption playbook (recommended)"
+    }
+  };
+
+  const industryHints = {
+    "FMCG":"Cycle สั้น → ใช้ timing ให้ถี่ได้ แต่ต้องคุมความถี่ข้อความเพื่อไม่ให้ mute",
+    "F&B":"ต้องสร้าง habit → Earn Only X Time + Last Earn ทำงานดีที่สุด",
+    "Retail":"Seasonality สูง → ใช้ Last Purchase + Top Spending เพื่อ personalise",
+    "Retail - Shopping Mall":"Footfall driven → Redemption (Point Expire/Never Redeem) คือคันโยกหลัก",
+    "Automotive":"Cycle ยาว → เน้น reminder & trust (service date) มากกว่า promo หนัก",
+    "Bank":"เน้น usage/engagement ของ product → Inactive + Last Transaction สำคัญ",
+    "TelCo":"churn sensitive → Last Payment + Inactive เป็น main triggers",
+    "Pet Product":"consumption repeat → Last Earn + Expire ทำให้กลับมาซื้อซ้ำเร็วขึ้น"
+  };
+
+  function buildRecommendations(industry, axis){
+    const segs = (data[industry] && data[industry][axis]) ? data[industry][axis] : [];
+    const rec = [];
+
+    if(axis === "Acquisition"){
+      rec.push({
+        title:"Flow 1: Register → First Action (within 7 days)",
+        bullets:[
+          "Day 0: Welcome + explain ‘how to earn’ แบบ 1 screen",
+          "Day 2: Reminder แบบ soft (no hard sell) + quick CTA",
+          "Day 5: Offer แบบ unlockable (ทำ action แล้วได้) ไม่ใช่แจกทันที",
+          "Stop rule: ถ้าเกิด First Earn/First Txn ให้ย้ายไป Engagement ทันที"
+        ]
+      });
+      rec.push({
+        title:"Flow 2: New User segmentation (optional)",
+        bullets:[
+          "New User (Never Earn) → โฟกัส instruction + friction removal",
+          "New User (First Earn) → โฟกัสทำให้เกิด Earn ซ้ำครั้งที่ 2 ภายใน cycle",
+          "วัด D7/D30 activation ไม่ใช่แค่ register count"
+        ]
+      });
+      rec.push({
+        title:"Guardrails",
+        bullets:[
+          "Frequency cap: 2–4 touches/เดือน (ขึ้นกับช่องทางและ industry cycle)",
+          "Welcome benefit ต้อง ‘ผลักไปสู่ first action’ ไม่ใช่แค่รับของแล้วหาย"
+        ],
+        tone:"warn"
+      });
+    }
+
+    if(axis === "Improve Engagement"){
+      rec.push({
+        title:"Flow 1: Last Action → Comeback (cadence-based)",
+        bullets:[
+          "T+X days after Last Earn/Purchase: soft nudge + value reminder",
+          "T+X+3 days: personalised suggestion (category/SKU/service)",
+          "T+X+7 days: mission/goal-based (Earn Only X Time) เพื่อสร้าง habit",
+          "Stop rule: ถ้ากลับมา action แล้ว reset clock"
+        ]
+      });
+      rec.push({
+        title:"Flow 2: Earn Only X Time → Build Habit",
+        bullets:[
+          "From Earn=1 → push to Earn=2 (within one natural cycle)",
+          "Use progressive milestone (2nd/3rd earn) แทนการให้ส่วนลดซ้ำๆ",
+          "Top Spending: ใช้ privilege/status มากกว่า discount หนัก"
+        ]
+      });
+      rec.push({
+        title:"Flow 3: Birth Month (Soft Retention)",
+        bullets:[
+          "Tone: Appreciate + small surprise (ไม่ hard sell)",
+          "ใช้เป็น warm-up แล้วค่อย follow ต่อด้วย campaign หลักใน 7–14 วัน",
+          "วัด Open/Click/Login + downstream action ใน 30 วัน"
+        ],
+        tone:"good"
+      });
+    }
+
+    if(axis === "Redemption"){
+      rec.push({
+        title:"Flow 1: Point Expire → Easy Redeem Path",
+        bullets:[
+          "Notify 30/14/7/1 วันก่อนหมด (เลือก cadence ตามแบรนด์ ไม่จำเป็นต้องครบ)",
+          "เสนอ 2–3 ตัวเลือกแลกที่ ‘ง่าย’ และ ‘ใช้ได้ทันที’",
+          "หลังแลก: ส่ง ‘next best action’ เพื่อดัน revisit (D7/D30)"
+        ]
+      });
+      rec.push({
+        title:"Flow 2: Never Redeem → Education + First Redeem",
+        bullets:[
+          "Explain value: แลกได้อะไร, แลกยังไง, ใช้ที่ไหน",
+          "เสนอ reward entry-level (threshold ต่ำ) เพื่อให้เกิด first redeem",
+          "ถ้าแลกแล้ว → ย้ายไป Last Redeem XX Days เพื่อสร้าง habit"
+        ]
+      });
+      rec.push({
+        title:"Guardrails",
+        bullets:[
+          "อย่าดัน burn แบบไม่ดูต้นทุน reward/COGS",
+          "ดู ‘revisit after redeem’ เป็น KPI หลัก ไม่ใช่ burn rate อย่างเดียว"
+        ],
+        tone:"warn"
+      });
+    }
+
+    const hint = industryHints[industry];
+    if(hint){
+      rec.unshift({
+        title:`Industry note: ${industry}`,
+        bullets:[hint],
+        tone:"good"
+      });
+    }
+
+    rec.push({
+      title:"Segments in this view",
+      bullets: segs.length ? segs.map(s => s) : ["(No segments mapped)"],
+      tone:""
+    });
+
+    return rec;
+  }
+
+  const industrySelect = document.getElementById("industrySelect");
+  const axisSelect = document.getElementById("axisSelect");
+  const segmentList = document.getElementById("segmentList");
+  const segCount = document.getElementById("segCount");
+  const recommendation = document.getElementById("recommendation");
+  const kpiRow = document.getElementById("kpiRow");
+  const axisNotes = document.getElementById("axisNotes");
+  const axisNoteTitle = document.getElementById("axisNoteTitle");
+  const industryHint = document.getElementById("industryHint");
+
+  const pillAxis = document.getElementById("pillAxis");
+  const pillIndustry = document.getElementById("pillIndustry");
+
+  let state = { industry:"FMCG", axis:"Acquisition" };
+
+  function renderKpis(axis){
+    const meta = axisMeta[axis];
+    kpiRow.innerHTML = "";
+    meta.kpis.forEach((k)=>{
+      const div = document.createElement("div");
+      div.className = "kpi";
+      div.innerHTML = `
+        <div class="label">Suggested KPI</div>
+        <div class="value">${k}</div>
+      `;
+      kpiRow.appendChild(div);
+    });
+  }
+
+  function renderAxisNotes(axis){
+    const meta = axisMeta[axis];
+    axisNoteTitle.textContent = meta.recTitle;
+    axisNotes.innerHTML = "";
+    meta.notes.forEach(n=>{
+      const li = document.createElement("li");
+      li.textContent = n;
+      axisNotes.appendChild(li);
+    });
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function render(){
+    const {industry, axis} = state;
+
+    pillAxis.textContent = axis;
+    pillIndustry.textContent = industry;
+
+    renderKpis(axis);
+    renderAxisNotes(axis);
+
+    const segs = (data[industry] && data[industry][axis]) ? data[industry][axis] : [];
+    segCount.textContent = `${segs.length} segment${segs.length===1?"":"s"}`;
+
+    segmentList.innerHTML = "";
+    segs.forEach(seg=>{
+      const meaning = segmentMeaning[seg] || "—";
+      const badgeClass =
+        (axis==="Acquisition") ? "badge good" :
+        (axis==="Improve Engagement") ? "badge" :
+        "badge warn";
+      const badgeText =
+        (axis==="Acquisition") ? "Start Journey" :
+        (axis==="Improve Engagement") ? "Increase Repeat" :
+        "Use Value";
+
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <div>
+          <p class="name">${seg}</p>
+          <p class="desc">${meaning}</p>
+        </div>
+        <div class="${badgeClass}">${badgeText}</div>
+      `;
+      segmentList.appendChild(div);
+    });
+
+    industryHint.textContent = industryHints[industry]
+      ? `Industry guidance: ${industryHints[industry]}`
+      : `Industry guidance: ใช้ purchase cycle ของธุรกิจเป็นตัวตั้ง แล้วกำหนด X-day windows ให้เหมาะ (เช่น 7/14/30/60/90 วัน)`;
+
+    const recs = buildRecommendations(industry, axis);
+    recommendation.innerHTML = "";
+    recs.forEach(r=>{
+      const div = document.createElement("div");
+      div.className = "recbox";
+      const tone = r.tone || "";
+      const toneBadge =
+        tone === "good" ? `<span class="badge good" style="margin-left:8px;">Recommended</span>` :
+        tone === "warn" ? `<span class="badge warn" style="margin-left:8px;">Watch-out</span>` :
+        tone === "bad" ? `<span class="badge bad" style="margin-left:8px;">Risk</span>` : "";
+
+      div.innerHTML = `
+        <h3>${r.title}${toneBadge}</h3>
+        <ul>${r.bullets.map(b=>`<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      `;
+      recommendation.appendChild(div);
+    });
+  }
+
+  function init(){
+    industries.forEach(name=>{
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      industrySelect.appendChild(opt);
+    });
+
+    industrySelect.value = state.industry;
+    axisSelect.value = state.axis;
+
+    industrySelect.addEventListener("change", e=>{
+      state.industry = e.target.value;
+      render();
+    });
+
+    axisSelect.addEventListener("change", e=>{
+      state.axis = e.target.value;
+      render();
+    });
+
+    const btnCopy = document.getElementById("btnCopy");
+    const copyOk = document.getElementById("copyOk");
+    btnCopy.addEventListener("click", async ()=>{
+      const {industry, axis} = state;
+      const segs = (data[industry] && data[industry][axis]) ? data[industry][axis] : [];
+      const recs = buildRecommendations(industry, axis);
+
+      const text =
+`CRM Segmentation Dashboard
+Industry: ${industry}
+Axis: ${axis}
+
+Segments:
+${segs.map(s=>`- ${s}`).join("\n")}
+
+Recommended:
+${recs.map(r=>`• ${r.title}\n${r.bullets.map(b=>`  - ${b}`).join("\n")}`).join("\n\n")}
+`;
+      try{
+        await navigator.clipboard.writeText(text);
+        copyOk.style.display = "inline";
+        setTimeout(()=>copyOk.style.display="none", 1200);
+      }catch(err){
+        alert("Copy failed (browser permission). You can manually copy from console/log if needed.");
+        console.log(text);
+      }
+    });
+
+    render();
+  }
+
+  init();
+</script>
+</body>
+</html>
