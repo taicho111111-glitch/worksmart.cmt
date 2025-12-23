@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRM Segmentation Dashboard</title>
+  <style>
+    :root{
+      --bg1:#eef3fb;
+      --bg2:#f7fafc;
+      --panel:rgba(255,255,255,.72);
+      --panel2:rgba(255,255,255,.56);
+      --text:#0b1220;
+      --muted:#51637a;
+      --line:rgba(15,23,42,.12);
+      --shadow: 0 18px 55px rgba(2,6,23,.14);
+      --shadow2: 0 10px 22px rgba(2,6,23,.10);
+      --radius:20px;
+      --radius2:16px;
+      --chipBg:rgba(14,165,233,.12);
+      --chipText:#0369a1;
+      --gold:#b08d57;
+      --ok:#166534;
+      --okBg:rgba(34,197,94,.12);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans Thai", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 750px at 16% 7%, rgba(14,165,233,.18), transparent 60%),
+        radial-gradient(900px 680px at 82% 14%, rgba(34,197,94,.14), transparent 55%),
+        radial-gradient(900px 700px at 55% 85%, rgba(176,141,87,.14), transparent 55%),
+        linear-gradient(180deg,var(--bg1),var(--bg2));
+    }
+    .wrap{max-width:1420px;margin:0 auto;padding:26px 18px 46px}
+    header{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+    h1{margin:0;font-size:24px;letter-spacing:.2px}
+    .subtitle{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.45;max-width:860px}
+    .pills{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+      box-shadow:var(--shadow2);
+      backdrop-filter: blur(10px);
+      white-space:nowrap;
+    }
+    .pill b{color:var(--gold)}
+    .card{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      margin-top:16px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+    .controls{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .field{min-width:280px}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+    select{
+      width:100%;
+      padding:11px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.85);
+      color:var(--text);
+      outline:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    select:focus{border-color:rgba(14,165,233,.55); box-shadow:0 0 0 4px rgba(147,197,253,.30)}
+    .btn{
+      background:rgba(255,255,255,.85);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:11px 12px;
+      cursor:pointer;
+      font-size:12px;
+      box-shadow:var(--shadow2);
+      white-space:nowrap;
+    }
+    .btn:active{transform:translateY(1px)}
+    .copy-ok{display:none;margin-left:8px;color:#16a34a;font-weight:800;font-size:12px}
+    .axis-stack{display:flex;flex-direction:column;gap:16px;margin-top:16px}
+    .axis-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .axis-title{font-weight:850;font-size:16px}
+    .axis-badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:7px 11px;border-radius:999px;
+      border:1px solid rgba(176,141,87,.28);
+      background:rgba(176,141,87,.10);
+      color:#7a5c2e;
+      font-size:12px;
+    }
+    .grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    .seg{
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      padding:14px;
+      margin-bottom:12px;
+      background:rgba(255,255,255,.86);
+      box-shadow: 0 8px 18px rgba(2,6,23,.06);
+    }
+    .seg-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .seg-name{font-weight:850}
+    .chip{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      background:var(--chipBg);
+      color:var(--chipText);
+      border:1px solid rgba(14,165,233,.20);
+      white-space:nowrap;
+    }
+    .seg-desc{margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.55}
+    .seg-why{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6}
+    .panel{
+      border:1px solid rgba(241,245,249,1);
+      border-radius:var(--radius2);
+      padding:14px;
+      background:rgba(255,255,255,.84);
+      box-shadow: 0 8px 18px rgba(2,6,23,.06);
+      margin-bottom:12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .panel:before{
+      content:"";
+      position:absolute; top:-70px; right:-110px;
+      width:260px; height:260px;
+      background: radial-gradient(circle at 30% 30%, rgba(176,141,87,.18), rgba(176,141,87,0) 62%);
+      transform: rotate(14deg);
+      pointer-events:none;
+    }
+    .panel h4{margin:0 0 8px;font-size:13px;position:relative;z-index:1}
+    .panel ul{margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.6;position:relative;z-index:1}
+    .tag{
+      display:inline-block;
+      margin-left:8px;
+      padding:5px 9px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid rgba(34,197,94,.22);
+      background:var(--okBg);
+      color:var(--ok);
+      position:relative;z-index:1;
+    }
+    .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+    @media (max-width: 980px){ .kpi-row{grid-template-columns:1fr} }
+    .kpi{
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      padding:14px;
+      background:rgba(255,255,255,.86);
+      box-shadow: 0 8px 18px rgba(2,6,23,.06);
+    }
+    .k-title{font-weight:850}
+    .k-desc{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.45}
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:rgba(15,23,42,.08);margin:10px 0 0}
+    .footnote{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.5}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>CRM Segmentation Dashboard</h1>
+      <div class="subtitle">
+        เลือก <b>Industry</b> แล้วระบบจะแสดงครบ 3 แกน: <b>Acquisition / Improve Engagement / Redemption</b> พร้อม Segment + Strategy + KPI ในหน้าเดียว (Birth Month อยู่ใน Improve Engagement ทุกอุตสาหกรรม)
+      </div>
+    </div>
+    <div class="pills">
+      <div class="pill">Industry: <b id="pillIndustry">FMCG</b></div>
+      <div class="pill">View: <b>All Axes</b></div>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="controls">
+      <div class="field">
+        <div class="label">Industry</div>
+        <select id="industrySelect"></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="btn" id="btnCopy">Copy current view</button>
+        <span class="copy-ok" id="copyOk">Copied ✓</span>
+      </div>
+    </div>
+    <div class="footnote">
+      Tip: กำหนด X-day window ให้สอดคล้องกับรอบการซื้อ/บริการจริง และตั้ง “Stop rule” เพื่อคุมความถี่การสื่อสาร (ลดความเสี่ยง mute/block)
+    </div>
+  </div>
+
+  <div class="axis-stack" id="axisContainer"></div>
+</div>
+
+<script>
+  // Full industry list (per your request)
+  const industries = [
+    "Agriculture","Airline","Appliance","Automotive","B2B","Bank","Construction","F&B","Fashion & Beauty","FMCG",
+    "FMCG - Supplement","Health&Wellness","Hospital","Insurance","Investment","Jewely","Land Developer","Leasing",
+    "Miscellaneous","Oil&Gas","Pet Product","Petrol","Restaurant","Retail","Retail - Shopping Mall","TelCo"
+  ];
+
+  // Segment deep definitions (used across industries)
+  const segDetail = {
+    "New User":{
+      tag:"Start Journey",
+      desc:"สมาชิกใหม่ในช่วง X วันแรก เป้าหมายคือทำให้ ‘เริ่มใช้งานจริง’ (First Earn/First Action) ไม่ใช่แค่สมัครแล้วหาย",
+      why:[
+        "0–7/14 วันแรกเป็นช่วงเปิดรับสูงที่สุด → พลาดแล้วต้นทุนดึงกลับสูง",
+        "ลด friction: สอนวิธีใช้/ช่องทางสะสม/สิทธิที่ได้ให้ชัด",
+        "welcome benefit ควรเป็น ‘ทำแล้วได้’ (unlock) เพื่อสร้างพฤติกรรม"
+      ]
+    },
+    "Inactive User":{
+      tag:"Winback",
+      desc:"สมาชิกที่ไม่เข้าแพลตฟอร์ม/ไม่ตอบสนอง/ไม่ active มาเกิน X วัน ต้องดึงกลับด้วยเหตุผลชัดและ CTA ง่าย",
+      why:[
+        "กลุ่ม At-risk ที่ยังพอจำแบรนด์ได้ แต่หลุดจากวงจรการสื่อสาร",
+        "เริ่มจาก value reminder + CTA ง่าย ก่อนใช้ incentive",
+        "ต้องมี Stop rule เพื่อไม่ให้เกิดความรำคาญและ mute/block"
+      ]
+    },
+    "Last Earn XX Days":{
+      tag:"Comeback",
+      desc:"เคยสะสมแต้มแล้ว แต่หายไปเกิน X วัน (สัญญาณ churn เชิง CRM) ใช้ timing เรียกกลับก่อนจะหลุดยาว",
+      why:[
+        "แก้ได้ด้วย timing มากกว่าโปรหนัก (โดยเฉพาะรอบซื้อสั้น)",
+        "ย้ำ ‘คุณเคยได้อะไร’ + ทำให้ action ถัดไปง่าย",
+        "กลับมา action แล้วต้อง reset clock เพื่อไม่ยิงซ้ำ"
+      ]
+    },
+    "Earn Only X Time":{
+      tag:"Build Habit",
+      desc:"สะสมแต้มเพียง 1–6 ครั้ง ยังไม่เกิด habit เป็นกลุ่ม ROI สูงในการดันให้กลับมาซ้ำ เพราะ barrier ต่ำ",
+      why:[
+        "ดัน Earn#1 → Earn#2 มี impact ต่อ retention สูงกว่าหาคนใหม่",
+        "ใช้ milestone/mission/progress แทนส่วนลดซ้ำ ๆ",
+        "เป้าคือให้เกิด ‘ครั้งถัดไป’ ภายในรอบซื้อปกติ"
+      ]
+    },
+    "Point on Hands":{
+      tag:"Use Value",
+      desc:"มีแต้มคงเหลือถึง threshold แต่ยังไม่ใช้ เหมาะกับการผลักให้ redeem เพื่อปิด loop ของ loyalty",
+      why:[
+        "ถ้าแต้มไม่ถูกใช้ ลูกค้าจะไม่รู้สึกว่า loyalty มีค่า → engagement ลด",
+        "เสนอ reward 2–3 แบบที่แลกง่าย/ใช้ได้ทันที",
+        "วัดผลด้วย revisit หลัง redeem ไม่ใช่ burn rate อย่างเดียว"
+      ]
+    },
+    "Point Expire":{
+      tag:"Urgency",
+      desc:"แต้มใกล้หมดอายุภายใน X วัน ใช้ความเร่งด่วน + ทางเลือกแลกง่าย เพื่อเพิ่ม redemption และลดแต้มสูญ",
+      why:[
+        "แจ้งหมดอายุอย่างเดียวไม่พอ ต้องมี ‘ทางเลือกแลก’ ที่ง่ายและตรงใจ",
+        "ควบคุม cadence (14/7/1 วัน) ให้เหมาะเพื่อไม่ให้ mute",
+        "หลัง redeem ต้องมี next best action เพื่อดัน revisit"
+      ]
+    },
+    "Never Redeem":{
+      tag:"First Redeem",
+      desc:"เคย Earn แต่ไม่เคยแลกเลย ต้องสอน value + ทำให้การแลกครั้งแรก ‘ง่ายและคุ้ม’",
+      why:[
+        "มักติดปัญหา: ไม่รู้วิธีแลก/ไม่เห็น reward ที่ใช่/threshold สูงเกิน",
+        "เสนอ entry-level reward (แต้มต่ำ) เพื่อสร้างพฤติกรรมการแลก",
+        "เมื่อแลกแล้ว ย้ายไป Last Redeem XX Days เพื่อสร้าง cycle"
+      ]
+    },
+    "Last Redeem XX Days":{
+      tag:"Repeat Redeem",
+      desc:"เคยแลกแล้ว แต่หายไปนาน ใช้เพื่อกระตุ้นให้ redeem ซ้ำและผูกกับการกลับมาซื้อ/มาใช้บริการ",
+      why:[
+        "คนที่เคย redeem แล้วมีโอกาส redeem ซ้ำสูง → แค่ต้องมี reason ใหม่",
+        "เสนอ reward ตามความสนใจ/ระดับแต้ม + เน้น ‘ใช้ได้จริง’",
+        "วัด D7/D30 revisit หลัง redeem เพื่อพิสูจน์ผล"
+      ]
+    },
+    "Last Purchase":{
+      tag:"Revisit",
+      desc:"ห่างจากการซื้อครั้งล่าสุดเกิน X วัน (บางธุรกิจใช้ Earn date แทนได้) เหมาะกับการกระตุ้นการกลับมาซื้อ/ใช้บริการ",
+      why:[
+        "map ตรงกับ revenue cycle และเข้าใจง่ายในฝั่ง business",
+        "ตั้ง X-day ตามรอบซื้อจริงเพื่อให้แม่น",
+        "ควรมี personalization ตาม category/SKU/บริการล่าสุด"
+      ]
+    },
+    "Top Spending":{
+      tag:"VIP Care",
+      desc:"กลุ่มมูลค่าสูง (Top X% / Top N) เป้าคือรักษาความสัมพันธ์และเพิ่ม share of wallet ด้วยสิทธิพิเศษมากกว่าส่วนลดหนัก",
+      why:[
+        "ลดราคาหนักกับ VIP ทำให้เสีย margin โดยไม่จำเป็น",
+        "เน้น status/privilege/priority service เพื่อสร้างความต่าง",
+        "วัด retention และ share of wallet มากกว่ายอดแคมเปญครั้งเดียว"
+      ]
+    },
+    "Birth Month":{
+      tag:"Soft Retention",
+      desc:"Trigger เชิงความสัมพันธ์ในเดือนเกิด เหมาะสำหรับ warm-up และทำให้ลูกค้ารู้สึกว่าแบรนด์ ‘จำได้’ ไม่ใช่ขายหนัก",
+      why:[
+        "เดือนเกิดเป็นช่วงที่ลูกค้าเปิดรับ emotional message สูงกว่า message เชิงขาย",
+        "ใช้ warm-up แล้ว follow ต่อด้วยแคมเปญหลักใน 7–14 วัน",
+        "วัด open/click/login และ downstream action ใน 30 วัน"
+      ]
+    }
+  };
+
+  // Axis meta (KPI + playbook notes)
+  const axisMeta = {
+    "Acquisition":{
+      kpis:[
+        {t:"Increase New Users", d:"จำนวนสมาชิกใหม่ที่สมัครเข้าระบบ"},
+        {t:"Increase First Earn Users", d:"สมาชิกใหม่ที่เริ่มสะสมแต้มครั้งแรก"},
+        {t:"Improve D7/D30 Activation", d:"สัดส่วนสมาชิกใหม่ที่ active ภายใน 7/30 วัน"}
+      ],
+      notes:[
+        "โฟกัส register → first action (อย่าจบที่สมัคร)",
+        "welcome benefit ควรเป็น ‘ทำแล้วได้’ (unlock) เพื่อลดการรับของแล้วหาย",
+        "เมื่อเกิด first earn ให้ย้ายเข้ากลุ่ม Improve Engagement ทันที"
+      ]
+    },
+    "Improve Engagement":{
+      kpis:[
+        {t:"Increase Active Users", d:"จำนวนสมาชิกที่กลับมาใช้งาน/สะสมแต้มต่อเดือน"},
+        {t:"Increase Earn Users", d:"จำนวนสมาชิกที่สะสมแต้มจริง (ไม่ใช่แค่เปิดแอป)"},
+        {t:"Improve Retention (M2/M3)", d:"ลูกค้ายัง active ต่อเนื่องหลังเดือนแรกหรือไม่"}
+      ],
+      notes:[
+        "โฟกัส ‘ความถี่การกลับมา’ มากกว่ายอดขายครั้งเดียว",
+        "ใช้ timing ตามรอบซื้อจริง + reset clock เมื่อเกิด action",
+        "Birth Month เป็น soft touch เพื่อ warm-up ไม่ใช่ hard sell"
+      ]
+    },
+    "Redemption":{
+      kpis:[
+        {t:"Increase Redeem Users", d:"จำนวนผู้ใช้ที่แลก reward/สิทธิได้สำเร็จ"},
+        {t:"Improve Redeem Conversion", d:"สัดส่วนคนที่เห็น/กดแลก แล้วแลกสำเร็จ"},
+        {t:"Increase Revisit After Redeem", d:"ลูกค้ากลับมาซื้อ/มาใช้บริการหลังแลก (D7/D30)"}
+      ],
+      notes:[
+        "อย่าแค่เร่ง burn ต้องทำให้ redeem ‘ง่าย’ และ ‘คุ้ม’",
+        "หลัง redeem ต้องมี next best action เพื่อปิด loop",
+        "วัดผลด้วย revisit ไม่ใช่ burn อย่างเดียว"
+      ]
+    }
+  };
+
+  // Full mapping: Industry x Axis -> Segments (from our agreed list)
+  const segmentsByIndustryAxis = {
+    "Agriculture":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Last Earn XX Days","Top Spending","Birth Month"],
+      "Redemption":["Point on Hands","Point Expire","Never Redeem"]
+    },
+    "Airline":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Top Spending","Birth Month","Last Redeem XX Days"],
+      "Redemption":["Point on Hands","Point Expire","Last Redeem XX Days","Never Redeem"]
+    },
+    "Appliance":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Birth Month","Inactive User"],
+      "Redemption":["Point Expire","Never Redeem","Last Redeem XX Days","Point on Hands"]
+    },
+    "Automotive":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Last Earn XX Days","Top Spending","Birth Month","Earn Only X Time"],
+      "Redemption":["Never Redeem","Point Expire","Last Redeem XX Days","Point on Hands"]
+    },
+    "B2B":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Last Earn XX Days","Top Spending","Birth Month","Inactive User"],
+      "Redemption":["Point on Hands","Point Expire","Never Redeem","Last Redeem XX Days"]
+    },
+    "Bank":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Purchase","Birth Month","Last Earn XX Days"],
+      "Redemption":["Point Expire","Never Redeem","Last Redeem XX Days","Point on Hands"]
+    },
+    "Construction":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Top Spending","Birth Month","Inactive User"],
+      "Redemption":["Point Expire","Point on Hands","Never Redeem"]
+    },
+    "F&B":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Earn XX Days","Last Purchase","Birth Month"],
+      "Redemption":["Point on Hands","Never Redeem","Last Redeem XX Days","Point Expire"]
+    },
+    "Fashion & Beauty":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Top Spending","Birth Month","Last Earn XX Days"],
+      "Redemption":["Point on Hands","Never Redeem","Last Redeem XX Days","Point Expire"]
+    },
+    "FMCG":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Earn XX Days","Birth Month","Inactive User"],
+      "Redemption":["Point on Hands","Point Expire","Never Redeem","Last Redeem XX Days"]
+    },
+    "FMCG - Supplement":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Last Earn XX Days","Birth Month","Inactive User"],
+      "Redemption":["Point Expire","Never Redeem","Point on Hands","Last Redeem XX Days"]
+    },
+    "Health&Wellness":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Last Earn XX Days","Birth Month","Inactive User"],
+      "Redemption":["Point on Hands","Never Redeem","Last Redeem XX Days","Point Expire"]
+    },
+    "Hospital":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Inactive User","Birth Month","Top Spending"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point on Hands"]
+    },
+    "Insurance":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Purchase","Birth Month","Top Spending"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point Expire"]
+    },
+    "Investment":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Purchase","Top Spending","Birth Month"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point on Hands"]
+    },
+    "Jewely":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Top Spending","Birth Month","Inactive User"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point on Hands","Point Expire"]
+    },
+    "Land Developer":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Purchase","Birth Month","Top Spending"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point on Hands"]
+    },
+    "Leasing":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Purchase","Birth Month","Last Earn XX Days"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point Expire","Point on Hands"]
+    },
+    "Miscellaneous":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Birth Month","Inactive User","Last Earn XX Days"],
+      "Redemption":["Point on Hands","Point Expire","Never Redeem","Last Redeem XX Days"]
+    },
+    "Oil&Gas":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Top Spending","Birth Month","Inactive User"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point on Hands"]
+    },
+    "Pet Product":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Earn XX Days","Last Purchase","Birth Month","Inactive User"],
+      "Redemption":["Point Expire","Never Redeem","Point on Hands","Last Redeem XX Days"]
+    },
+    "Petrol":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Birth Month","Last Earn XX Days"],
+      "Redemption":["Point Expire","Point on Hands","Never Redeem","Last Redeem XX Days"]
+    },
+    "Restaurant":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Earn Only X Time","Last Purchase","Birth Month","Last Earn XX Days"],
+      "Redemption":["Never Redeem","Last Redeem XX Days","Point on Hands","Point Expire"]
+    },
+    "Retail":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Last Purchase","Earn Only X Time","Top Spending","Birth Month","Inactive User","Last Earn XX Days"],
+      "Redemption":["Point on Hands","Point Expire","Never Redeem","Last Redeem XX Days"]
+    },
+    "Retail - Shopping Mall":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Birth Month","Last Purchase"],
+      "Redemption":["Point Expire","Never Redeem","Point on Hands","Last Redeem XX Days"]
+    },
+    "TelCo":{
+      "Acquisition":["New User"],
+      "Improve Engagement":["Inactive User","Last Purchase","Birth Month","Last Earn XX Days"],
+      "Redemption":["Point Expire","Never Redeem","Last Redeem XX Days","Point on Hands"]
+    }
+  };
+
+  // Industry strategy by archetype (keeps it consistent)
+  const archetype = {
+    "Agriculture":"b2b_cycle",
+    "Airline":"travel_loyalty",
+    "Appliance":"durable_longcycle",
+    "Automotive":"service_longcycle",
+    "B2B":"b2b_cycle",
+    "Bank":"financial_regulated",
+    "Construction":"b2b_cycle",
+    "F&B":"high_frequency",
+    "Fashion & Beauty":"seasonal_retail",
+    "FMCG":"high_frequency",
+    "FMCG - Supplement":"repeat_program",
+    "Health&Wellness":"repeat_program",
+    "Hospital":"service_trust",
+    "Insurance":"financial_regulated",
+    "Investment":"financial_regulated",
+    "Jewely":"luxury_lowfreq",
+    "Land Developer":"consideration_long",
+    "Leasing":"financial_regulated",
+    "Miscellaneous":"general_retail",
+    "Oil&Gas":"b2b_cycle",
+    "Pet Product":"repeat_program",
+    "Petrol":"high_frequency",
+    "Restaurant":"high_frequency",
+    "Retail":"seasonal_retail",
+    "Retail - Shopping Mall":"footfall_destination",
+    "TelCo":"subscription"
+  };
+
+  const profiles = {
+    "high_frequency":{
+      pain:[
+        "Cycle การซื้อสั้น → ลูกค้าซื้อซ้ำได้บ่อย แต่ถ้า CRM ไม่ฝังในพฤติกรรม จะซื้อโดยไม่สะสมแต้ม",
+        "ฐานสมาชิกมักใหญ่กว่า Active/Earn ต่อเดือนมาก (ฐานใหญ่แต่ไม่ active)"
+      ],
+      direction:[
+        "สร้าง habit: ทำให้ ‘สะสมแต้มทุกครั้ง’ เป็น default step หลังซื้อ",
+        "ใช้ cadence & timing ตามรอบซื้อจริง (7/14/30 วัน) + reset clock เมื่อเกิด action",
+        "ใช้ mission/progress มากกว่าส่วนลดหนัก เพื่อคุมต้นทุน"
+      ],
+      playbooks:{
+        "Acquisition":[
+          {title:"Welcome → First Earn (ภายใน 7–14 วัน)", rec:true, bullets:[
+            "Day 0: Welcome + วิธีสะสมแต้มแบบ 1 หน้าจอ + CTA ทำทันที",
+            "Day 2: Reminder แบบ soft + ย้ำ benefit ที่จับต้องได้",
+            "Day 5: Unlock bonus เมื่อเกิด first earn (ไม่แจกทันที)",
+            "Stop rule: ถ้าเกิด first earn ให้ย้ายไป Build Habit"
+          ]}
+        ],
+        "Improve Engagement":[
+          {title:"Last Earn → Comeback (cadence-based)", rec:true, bullets:[
+            "หลังสะสมแต้มล่าสุด 7 วัน: soft nudge + value reminder",
+            "ถ้า 14 วันยังไม่กลับมา: เสนอ mission สั้น ๆ ให้เริ่มง่าย",
+            "ถ้า 30 วันยังเงียบ: winback offer แบบคุมต้นทุน (unlock/limited)",
+            "เมื่อเกิด action: reset clock ทันที"
+          ]},
+          {title:"Earn Only X Time → Build Habit", rec:false, bullets:[
+            "ดัน Earn#1 → Earn#2 ภายในรอบซื้อปกติ (เช่น 7–14 วัน)",
+            "ใช้ progress/milestone: ‘ใกล้ครบแล้ว’ แทนส่วนลดซ้ำ",
+            "Top Spending: ใช้ privilege/status มากกว่าลดราคาแรง"
+          ]},
+          {title:"Birth Month (Soft Retention)", rec:true, bullets:[
+            "ขอบคุณ + สิทธิเล็กน้อยที่ใช้ได้จริง (ไม่ hard sell)",
+            "Follow ต่อด้วย campaign หลักใน 7–14 วัน",
+            "วัด Open/Click/Login + downstream action ใน 30 วัน"
+          ]}
+        ],
+        "Redemption":[
+          {title:"Point Expire → Easy Redeem Path", rec:true, bullets:[
+            "แจ้งล่วงหน้า 14/7/1 วัน (เลือก cadence ตามแบรนด์)",
+            "เสนอ 2–3 reward แลกง่าย ใช้ได้ทันที",
+            "หลังแลก: ส่ง next best action เพื่อให้กลับมาซื้ออีก"
+          ]}
+        ]
+      },
+      guidance:"แนะนำตั้ง frequency cap 2–4 touches/เดือน/คน และใช้ข้อความสั้น ชัด ‘ได้อะไร’"
+    },
+    "repeat_program":{
+      pain:[
+        "ลูกค้ามีเหตุซื้อซ้ำชัด แต่เสี่ยงหลุดเมื่อไม่มี reminder/ไม่มี habit",
+        "คาดหวังผลลัพธ์ต่อเนื่อง (สุขภาพ/สัตว์เลี้ยง) → ถ้าขาดช่วง churn ง่าย"
+      ],
+      direction:[
+        "ทำ cadence-based automation ให้เหมือนผู้ช่วยส่วนตัว",
+        "ใช้ continuity reward (ครบ X ครั้ง) แทนลดราคาแรง",
+        "ใส่ education content เพื่อเพิ่ม trust และลด churn"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Continuity Journey (เตือนตามรอบ)", rec:true, bullets:[
+            "หลังซื้อ/earn: ส่ง how-to / วิธีใช้ / ตารางการใช้",
+            "ครบ X วัน: reminder ซื้อซ้ำ + reward แบบต่อเนื่อง",
+            "ถ้าขาดช่วง: winback แบบให้เริ่มกลับมาได้ง่าย"
+          ]}
+        ]
+      },
+      guidance:"วัดผลด้วย repeat earn users + time between purchase + churn reduction"
+    },
+    "seasonal_retail":{
+      pain:[
+        "ยอดขายขึ้นลงตามฤดูกาล/แคมเปญ ทำให้ความถี่ซื้อไม่สม่ำเสมอ",
+        "ลูกค้าโดนโปรหลายเจ้า → loyalty ต่ำถ้าไม่มี personalization"
+      ],
+      direction:[
+        "ใช้ Last Purchase + Category affinity เพื่อ personalization",
+        "สร้างเหตุผลให้กลับมา: new drop/collection/limited/privilege",
+        "รักษา margin: VIP ให้ privilege มากกว่าลดราคาแรง"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Last Purchase → Revisit (ตาม category)", rec:true, bullets:[
+            "ครบ X วัน: item care/how-to + แนะนำสินค้าเข้าคู่ (soft sell)",
+            "ครบ X+14 วัน: ส่ง preview/new arrival ตาม category ที่เคยซื้อ",
+            "ช่วง season: ให้ early access แทนส่วนลดแรง"
+          ]}
+        ],
+        "Redemption":[
+          {title:"Point on Hands → Privilege Redeem", rec:true, bullets:[
+            "เสนอ privilege ที่ ‘ใช้แล้วรู้สึกพิเศษ’ (priority/early access/upgrade)",
+            "ทำ quick redeem path: 2 คลิกจบ",
+            "วัด revisit after redeem"
+          ]}
+        ]
+      },
+      guidance:"กำหนด X-day ตาม category และใช้ creative ที่ชัดว่า ‘ได้อะไร’"
+    },
+    "service_longcycle":{
+      pain:[
+        "รอบบริการยาว ลูกค้าไม่รู้สึกว่าต้องรีบกลับมา → เสี่ยงหลุดรอบเช็ก",
+        "ความเชื่อใจและมาตรฐานบริการสำคัญกว่าโปรโมชัน"
+      ],
+      direction:[
+        "ใช้ reminder ตามไมล์/ตามรอบ เป็นแกนหลัก",
+        "สร้างความเชื่อมั่น: content ให้ความรู้ + ประวัติบริการ",
+        "สิทธิเน้น convenience (priority/fast lane) มากกว่าส่วนลดแรง"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Service Cadence Reminder", rec:true, bullets:[
+            "ครบ X วัน/ไมล์: แจ้งเตือนตรวจเช็กแบบให้ความรู้ (ทำไมต้องเช็ก)",
+            "ถ้ายังไม่จอง: เสนอ incentive แบบคุมต้นทุน (free check/priority)",
+            "หลังใช้บริการ: ขอบคุณ + ชวนสะสมแต้มต่อ"
+          ]}
+        ]
+      },
+      guidance:"สื่อสารแบบ ‘ผู้ช่วยดูแล’ มากกว่า ‘ขายโปร’"
+    },
+    "durable_longcycle":{
+      pain:[
+        "รอบซื้อยาว → engagement ต้องมาจากบริการ/อุปกรณ์เสริม/การดูแลหลังขาย",
+        "ลูกค้าไม่มีเหตุเข้าระบบบ่อย"
+      ],
+      direction:[
+        "สร้าง lifecycle content: how-to, maintenance, accessory matching",
+        "ทำ event/clinic/extended warranty เพื่อสร้าง touchpoint",
+        "ใช้ redemption เป็น privilege/service มากกว่าส่วนลด"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Care Journey หลังซื้อ", rec:true, bullets:[
+            "7 วัน: how-to + setup tips",
+            "30–60 วัน: แนะนำ accessory/consumable ตามรุ่น",
+            "6 เดือน: เช็กสภาพ/บริการดูแล"
+          ]}
+        ]
+      },
+      guidance:"วัดผลด้วย active users + service attach rate มากกว่า frequency purchase"
+    },
+    "subscription":{
+      pain:[
+        "churn sensitive: ถ้าไม่จ่าย/ไม่ใช้บริการต่อเนื่อง → หลุดเร็ว",
+        "ลูกค้ารับข้อความเยอะ ต้องสื่อสารให้คมและมีประโยชน์จริง"
+      ],
+      direction:[
+        "ใช้ trigger ชัด: days-to-renew, usage drop, inactivity",
+        "ทำ proactive save: เตือนก่อนหลุด + เสนอทางเลือกเหมาะ",
+        "reward ควรผูกกับการใช้งาน/การต่ออายุ"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Renewal & Save Journey", rec:true, bullets:[
+            "ก่อนครบกำหนด 7 วัน: เตือนจ่าย/ต่ออายุ + ช่องทางง่าย",
+            "ถ้า usage ลด: ส่ง value reminder + personalised offer",
+            "ถ้าเลยกำหนด: winback แบบ time-limited"
+          ]}
+        ]
+      },
+      guidance:"ต้องมี message hierarchy ชัด (billing > service > marketing)"
+    },
+    "financial_regulated":{
+      pain:[
+        "ข้อจำกัด/ความน่าเชื่อถือสูง ทำให้ขายตรงยาก",
+        "ลูกค้าใช้งานเป็นช่วง ๆ → inactivity/low usage เกิดง่าย"
+      ],
+      direction:[
+        "ใช้ education + trust + simplification เป็นหลัก",
+        "กระตุ้น usage ด้วย benefit ที่ปลอดภัยต่อกติกา",
+        "เน้น onboarding ให้เข้าใจ value ตั้งแต่แรก"
+      ],
+      playbooks:{
+        "Acquisition":[
+          {title:"Welcome → First Meaningful Action", rec:true, bullets:[
+            "อธิบาย benefit แบบชัดเจน + step-by-step ทำ action แรก",
+            "ภายใน 7–14 วัน: ชวนทำ action ที่สร้าง stickiness (ผูกบัญชี/ตั้งค่า)",
+            "ใช้ tone น่าเชื่อถือ ไม่ hard sell"
+          ]}
+        ],
+        "Improve Engagement":[
+          {title:"Inactive/Last Transaction → Re-activate", rec:true, bullets:[
+            "ถ้าไม่ทำธุรกรรม X วัน: แจ้ง value reminder + วิธีทำง่าย",
+            "เสนอ privilege/fee benefit ที่ปลอดภัยต่อกติกา",
+            "วัด usage lift และ retained users"
+          ]}
+        ]
+      },
+      guidance:"เน้นความชัดเจน/ความปลอดภัย/ความไว้วางใจ"
+    },
+    "service_trust":{
+      pain:[
+        "การตัดสินใจอิงความเชื่อใจสูง และมีข้อจำกัดเรื่องข้อมูลส่วนบุคคล",
+        "การกลับมามักเกิดจากนัด/ติดตามผล มากกว่าโปร"
+      ],
+      direction:[
+        "ใช้ reminder ตามนัด/ตามคอร์ส + ให้ความรู้",
+        "ทำ personalised care plan และแสดงประวัติ/ผลลัพธ์",
+        "สิทธิเน้น convenience/priority มากกว่า reward ใหญ่"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Follow-up & Next Appointment", rec:true, bullets:[
+            "หลังรับบริการ 3–7 วัน: follow-up + คำแนะนำ",
+            "ก่อนนัด 3 วัน: เตือนนัด + checklist",
+            "ถ้าหายไป X วัน: ชวนกลับมาแบบให้ความมั่นใจ"
+          ]}
+        ]
+      },
+      guidance:"ระวัง consent/privacy และใช้ภาษา professional"
+    },
+    "travel_loyalty":{
+      pain:[
+        "ทริปไม่ถี่ → frequency ต่ำ แต่ลูกค้าสนใจ privilege ระหว่างเดินทางสูง",
+        "tier/status เป็นแรงขับหลักมากกว่าส่วนลดเล็ก"
+      ],
+      direction:[
+        "ใช้ tier/status + privilege เป็น core driver",
+        "ทำ pre-trip / post-trip journey เพื่อเพิ่ม touchpoint",
+        "เน้น redemption ที่ใช้ได้จริง (lounge/upgrade/baggage)"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Post-trip → Next Trip Intent", rec:true, bullets:[
+            "หลังบิน 3–7 วัน: ขอบคุณ + สรุปแต้ม/สิทธิ",
+            "หลัง 30–60 วัน: ชวนวางแผนทริปใหม่ + privilege",
+            "ก่อนแต้มหมดอายุ: เสนอแลกสิทธิที่ใช้ได้ทันที"
+          ]}
+        ]
+      },
+      guidance:"วัดด้วย repeat booking intention + redeem privilege"
+    },
+    "luxury_lowfreq":{
+      pain:[
+        "low frequency แต่ expectation สูง → สื่อสารต้องพรีเมียมและไม่ถี่",
+        "ลูกค้าคาดหวังความพิเศษ/การดูแล มากกว่าส่วนลด"
+      ],
+      direction:[
+        "VIP care + invite-only experiences",
+        "ใช้ birth month/anniversary เป็น relationship moment",
+        "สิทธิเป็น service/experience มากกว่า point discount"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"VIP Relationship Moments", rec:true, bullets:[
+            "Birth month/anniversary: ขอบคุณ + privilege เฉพาะบุคคล",
+            "หลังซื้อ: care guide + cleaning/service appointment",
+            "invite preview: limited collection / private event"
+          ]}
+        ]
+      },
+      guidance:"คุมความถี่ข้อความเข้มมาก และเน้น personal tone"
+    },
+    "consideration_long":{
+      pain:[
+        "เส้นทางตัดสินใจยาว ลูกค้าดูข้อมูลหลายรอบก่อนซื้อ",
+        "ลีดเยอะแต่ conversion ต่ำ ถ้า nurturing ไม่ดีจะหลุด"
+      ],
+      direction:[
+        "ทำ lead nurturing ตาม stage (awareness→consideration→decision)",
+        "ใช้ recency (Last Interaction) เป็น trigger",
+        "ผูกโปรกับเหตุผลจริง เช่น นัดชม/จอง/เอกสารพร้อม"
+      ],
+      playbooks:{
+        "Acquisition":[
+          {title:"Lead → Appointment", rec:true, bullets:[
+            "หลังลงทะเบียน: ส่ง guide โครงการ/แบบห้อง/ราคา + CTA นัดชม",
+            "ถ้าไม่ตอบ X วัน: ส่ง FAQ/รีวิว/เคส เพื่อแก้ข้อกังวล",
+            "ก่อนนัด: reminder + checklist"
+          ]}
+        ]
+      },
+      guidance:"วัดด้วย appointment rate, show-up, qualified leads"
+    },
+    "footfall_destination":{
+      pain:[
+        "ยอดขึ้นกับ footfall/อีเวนต์ → ถ้าไม่มีเหตุผลลูกค้าจะไม่มา",
+        "แต้ม/สิทธิหลายร้านทำให้ value ซับซ้อน"
+      ],
+      direction:[
+        "ใช้ redemption เป็นตัวดึง footfall (Point Expire/Point on Hands)",
+        "ทำ missions แบบ ‘มาที่ห้าง’ (check-in/receipt)",
+        "ทำ partner offers ให้แลกง่ายและใช้ได้จริง"
+      ],
+      playbooks:{
+        "Redemption":[
+          {title:"Point Expire → Come to Mall", rec:true, bullets:[
+            "แจ้งแต้มหมดอายุพร้อม ‘ดีลแลกง่าย’ ในห้าง",
+            "เสนอร้าน anchor ที่คนใช้จริง (F&B/parking/cinema)",
+            "หลังแลก: ส่งแผนที่/สิทธิ parking/next mission"
+          ]}
+        ]
+      },
+      guidance:"วัดด้วย redeem in-mall + revisit rate"
+    },
+    "b2b_cycle":{
+      pain:[
+        "รอบซื้อขึ้นกับสต็อก/เครดิต → cadence ต่างจาก B2C",
+        "ผู้ซื้อให้ความสำคัญกับราคา/ส่งเร็ว/เงื่อนไข มากกว่าเกม"
+      ],
+      direction:[
+        "ทำ reorder reminder ตามรอบ consumption + ดีลแบบ tiered",
+        "ใช้ Top Spending เพื่อ account care และเพิ่ม share of wallet",
+        "เน้น operational value (ส่งเร็ว/ส่งฟรี/เครดิต) มากกว่า reward เล่นเกม"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Last Purchase → Reorder", rec:true, bullets:[
+            "เตือนตามรอบสินค้า (14/21/30 วันตามประเภท)",
+            "เสนอ deal ตาม tier เพื่อดัน basket size",
+            "ถ้าหายไปนาน: consult via call/chat มากกว่า blast"
+          ]}
+        ]
+      },
+      guidance:"วัด repeat order rate + AOV + active accounts"
+    },
+    "general_retail":{
+      pain:[
+        "สินค้า/บริการหลากหลาย → message กว้างเกินแล้วไม่โดน",
+        "ลูกค้าจำโปรได้ แต่ไม่จำ value ของ CRM"
+      ],
+      direction:[
+        "เริ่มจาก segmentation ง่าย ๆ: new/inactive/last purchase/point expire",
+        "ค่อยเพิ่ม personalisation ตาม category/SKU เมื่อ data พร้อม",
+        "ทำ redeem path ให้สั้นและชัด"
+      ],
+      playbooks:{
+        "Improve Engagement":[
+          {title:"Last Purchase → Revisit", rec:true, bullets:[
+            "ครบ X วัน: reminder + item suggestion ตามสิ่งที่เคยซื้อ",
+            "ครบ X+7 วัน: mission สั้น ๆ เพื่อให้เกิด action",
+            "รีเซ็ตเมื่อซื้อ/earn แล้ว"
+          ]}
+        ]
+      },
+      guidance:"เริ่มจาก ‘ทำให้เข้าใจง่าย’ ก่อนทำให้ซับซ้อน"
+    }
+  };
+
+  // Industry specific overlays (only for a few high-usage categories; rest uses archetype)
+  const industrySpecific = {
+    "FMCG":{
+      pain:[
+        "Total User เยอะ แต่ Active/Earn User ต่อเดือนต่ำมาก → ฐานใหญ่แต่ไม่ขับเคลื่อนยอดอย่างที่ควร",
+        "ลูกค้าซื้อซ้ำอยู่แล้ว แต่ ‘ไม่คิดถึง CRM’ ตอนซื้อ"
+      ],
+      direction:[
+        "ทำให้ ‘สะสมแต้ม’ เป็น default step หลังซื้อ (ลด friction + สอนชัด)",
+        "เร่ง Earn ครั้งที่ 2–3 เพื่อสร้าง habit (mission/milestone แทนลดราคา)",
+        "ปิด loop ด้วย reward แลกง่าย/ใช้ได้จริง เพื่อทำให้ loyalty ‘มีค่า’"
+      ]
+    },
+    "Retail - Shopping Mall":{
+      pain:[
+        "Footfall driven: คนมาเป็นช่วงอีเวนต์ ถ้าไม่มีเหตุผล → เงียบ",
+        "แต้ม/สิทธิหลายร้านทำให้ลูกค้าไม่เห็น value ชัด"
+      ],
+      direction:[
+        "ใช้ Redemption เป็นตัวดึงให้มาห้าง (Point Expire/Point on Hands) + ดีลใช้ได้จริงในห้าง",
+        "ทำ mission ‘มาที่ห้าง’ (check-in/receipt) เพื่อเพิ่ม visit",
+        "หลัง redeem ส่ง next mission เพื่อพากลับมาอีก"
+      ]
+    },
+    "TelCo":{
+      pain:[
+        "churn sensitive: ถ้าไม่จ่าย/ไม่ใช้งานต่อเนื่องจะหลุดเร็ว",
+        "ลูกค้ารับข้อความเยอะ ต้องสื่อสารให้คมและเกี่ยวกับชีวิตจริง"
+      ],
+      direction:[
+        "ใช้ trigger สำคัญ: ใกล้ครบกำหนดจ่าย, usage drop, inactivity → สื่อสารแบบช่วยเหลือก่อนขาย",
+        "ทำ save journey ก่อนหลุด (เตือน 7 วันก่อนกำหนด) และมีทางเลือกที่เหมาะ",
+        "ผูก reward/privilege กับการต่ออายุเพื่อเพิ่ม stickiness"
+      ]
+    }
+  };
+
+  function getProfile(industry){
+    const key = archetype[industry] || "general_retail";
+    return profiles[key] || profiles["general_retail"];
+  }
+
+  function getIndustryText(industry){
+    const base = getProfile(industry);
+    const spec = industrySpecific[industry];
+    return {
+      pain: spec ? spec.pain : base.pain,
+      direction: spec ? spec.direction : base.direction,
+      playbooks: base.playbooks || {},
+      guidance: base.guidance || ""
+    };
+  }
+
+  function renderAxis(industry, axis){
+    const segs = (segmentsByIndustryAxis[industry] && segmentsByIndustryAxis[industry][axis]) ? segmentsByIndustryAxis[industry][axis] : [];
+    const meta = axisMeta[axis];
+    const indText = getIndustryText(industry);
+
+    const block = document.createElement("div");
+    block.className = "card";
+
+    block.innerHTML = `
+      <div class="axis-head">
+        <div class="axis-title">${axis}</div>
+        <div class="axis-badge">${segs.length} segments</div>
+      </div>
+
+      <div class="kpi-row">
+        ${meta.kpis.map(k=>`
+          <div class="kpi">
+            <div class="k-title">${k.t}</div>
+            <div class="k-desc">${k.d}</div>
+          </div>`).join("")}
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid" style="margin-top:16px">
+        <div>
+          ${segs.map(name=>{
+            const d = segDetail[name] || {tag:"", desc:"", why:[]};
+            return `
+              <div class="seg">
+                <div class="seg-top">
+                  <div>
+                    <div class="seg-name">${name}</div>
+                    <div class="seg-desc">${d.desc || ""}</div>
+                  </div>
+                  ${d.tag ? `<div class="chip">${d.tag}</div>` : ""}
+                </div>
+                ${d.why && d.why.length ? `<ul class="seg-why">${d.why.map(x=>`<li>${x}</li>`).join("")}</ul>` : ""}
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        <div>
+          <div class="panel">
+            <h4>Industry pain points: ${industry}<span class="tag">Recommended</span></h4>
+            <ul>${indText.pain.map(x=>`<li>${x}</li>`).join("")}</ul>
+          </div>
+
+          <div class="panel">
+            <h4>Strategy direction (ตอบปัญหาอุตสาหกรรม)</h4>
+            <ul>${indText.direction.map(x=>`<li>${x}</li>`).join("")}</ul>
+          </div>
+
+          <div class="panel">
+            <h4>${axis} playbook (recommended)</h4>
+            <ul>${meta.notes.map(x=>`<li>${x}</li>`).join("")}</ul>
+          </div>
+
+          ${renderPlaybooks(industry, axis)}
+
+          <div class="footnote">${indText.guidance ? ("Industry guidance: " + indText.guidance) : ""}</div>
+        </div>
+      </div>
+    `;
+    return block;
+  }
+
+  function renderPlaybooks(industry, axis){
+    const indText = getIndustryText(industry);
+    const plays = (indText.playbooks && indText.playbooks[axis]) ? indText.playbooks[axis] : [];
+    if(!plays.length) return "";
+    return plays.map(p=>`
+      <div class="panel">
+        <h4>${p.title}${p.rec ? `<span class="tag">Recommended</span>` : ""}</h4>
+        <ul>${p.bullets.map(b=>`<li>${b}</li>`).join("")}</ul>
+      </div>
+    `).join("");
+  }
+
+  function renderAll(){
+    const industry = document.getElementById("industrySelect").value;
+    document.getElementById("pillIndustry").textContent = industry;
+
+    const container = document.getElementById("axisContainer");
+    container.innerHTML = "";
+
+    ["Acquisition","Improve Engagement","Redemption"].forEach(axis=>{
+      container.appendChild(renderAxis(industry, axis));
+    });
+  }
+
+  // Copy current view
+  async function copyCurrent(){
+    const industry = document.getElementById("industrySelect").value;
+    const indText = getIndustryText(industry);
+
+    let text = `CRM Segmentation Dashboard\nIndustry: ${industry}\nView: All Axes\n\n`;
+    text += `Industry pain points:\n${indText.pain.map(p=>`- ${p}`).join("\n")}\n\n`;
+    text += `Strategy direction:\n${indText.direction.map(p=>`- ${p}`).join("\n")}\n\n`;
+
+    ["Acquisition","Improve Engagement","Redemption"].forEach(axis=>{
+      const meta = axisMeta[axis];
+      const segs = (segmentsByIndustryAxis[industry] && segmentsByIndustryAxis[industry][axis]) ? segmentsByIndustryAxis[industry][axis] : [];
+      text += `${axis}\nSuggested KPI:\n${meta.kpis.map(k=>`- ${k.t}: ${k.d}`).join("\n")}\nSegments:\n${segs.map(s=>`- ${s}`).join("\n")}\n\n`;
+    });
+
+    try{
+      await navigator.clipboard.writeText(text);
+      const ok = document.getElementById("copyOk");
+      ok.style.display = "inline";
+      setTimeout(()=>ok.style.display="none", 1200);
+    }catch(e){
+      alert("Copy failed (browser permission).");
+      console.log(text);
+    }
+  }
+
+  // Init
+  const sel = document.getElementById("industrySelect");
+  industries.forEach(i=>{
+    const opt = document.createElement("option");
+    opt.value=i; opt.textContent=i;
+    sel.appendChild(opt);
+  });
+
+  sel.value = "FMCG";
+  sel.addEventListener("change", renderAll);
+  document.getElementById("btnCopy").addEventListener("click", copyCurrent);
+
+  renderAll();
+</script>
+</body>
+</html>
