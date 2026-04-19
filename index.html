@@ -44,14 +44,16 @@
 
         <main>
             <section id="tab-overview" class="tab-content">
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8 text-center" id="summary-stats"></div>
-                <div class="flex justify-center">
-                    <div class="bold-card p-10 w-full max-w-4xl">
-                        <h3 class="text-[10px] font-black uppercase mb-8 italic border-b-2 border-slate-100 pb-2 text-center">Service Portfolio Distribution</h3>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                            <div class="h-64 w-full flex justify-center"><canvas id="donutChart"></canvas></div>
-                            <div id="donut-legend" class="space-y-4"></div>
-                        </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 text-center" id="summary-stats"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="bold-card p-8 lg:col-span-1">
+                        <h3 class="text-[10px] font-black uppercase mb-6 italic border-b-2 border-slate-100 pb-2">Service Distribution</h3>
+                        <div class="h-48 w-full flex justify-center mb-6"><canvas id="donutChart"></canvas></div>
+                        <div id="donut-legend" class="space-y-2"></div>
+                    </div>
+                    <div class="bold-card p-8 lg:col-span-2">
+                        <h3 class="text-[10px] font-black uppercase mb-6 italic border-b-2 border-slate-100 pb-2 text-center">Pipeline Overview (Accounts by Stage)</h3>
+                        <div class="h-64 w-full"><canvas id="barChart"></canvas></div>
                     </div>
                 </div>
             </section>
@@ -72,10 +74,11 @@
     </div>
 
     <script>
+        // ล็อก URL ของพี่ไว้ถาวร
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShtYYTaN6FAnvYPCBriBIY7D9Wgbr5pLDE1FzuNVsi8ByMMZ6CMNZNknkca1DkU3hRDyg5xNvX5Kxs/pub?output=csv'; 
         
         let clients = [];
-        let chart1;
+        let chart1, chart2;
         const STAGES = ['leads', 'pitching', 'implement', 'ongoing'];
 
         async function fetchData() {
@@ -93,56 +96,71 @@
                             service: row.ServiceType || 'Marketing Automation',
                             strategy: row.Strategy || 'Strategy',
                             stage: (row.Stage || 'leads').toLowerCase().trim(),
-                            progress: parseInt(row.Progress) || 0,
                             impact: parseInt(row.Impact) || 0,
                             results: row.Results ? row.Results.split('|').map(r => r.trim()) : []
                         }));
                         renderAll();
                     }
                 });
-            } catch (err) { console.error("Data Sync Failed!"); }
+            } catch (err) { console.error("Sync Failed"); }
         }
 
         function renderAll() { renderSummary(); renderKanban(); renderImpact(); }
 
         function renderSummary() {
             const total = clients.length;
-            const ongoing = clients.filter(c => c.stage === 'ongoing').length;
             const autoCount = clients.filter(c => c.service === 'Marketing Automation').length;
             const successCount = clients.filter(c => c.service === 'Customer Success Program').length;
 
             document.getElementById('summary-stats').innerHTML = `
                 <div class="bold-card p-6 text-center"><p class="text-[9px] font-bold text-slate-400 uppercase">Total Portfolio</p><h2 class="text-4xl font-black">${total}</h2></div>
-                <div class="bold-card p-6 border-b-4 border-emerald-500 text-center"><p class="text-[9px] font-bold text-emerald-600 uppercase">Success %</p><h2 class="text-4xl font-black text-emerald-600">${total ? Math.round((ongoing/total)*100) : 0}%</h2></div>
-                <div class="bold-card p-6 border-b-4 border-blue-600 text-center"><p class="text-[9px] font-bold text-blue-600 uppercase">Automation</p><h2 class="text-4xl font-black text-blue-600">${autoCount}</h2></div>
-                <div class="bold-card p-6 border-b-4 border-slate-900 text-center"><p class="text-[9px] font-bold text-slate-900 uppercase">Success Program</p><h2 class="text-4xl font-black text-slate-900">${successCount}</h2></div>
+                <div class="bold-card p-6 border-b-4 border-blue-600 text-center"><p class="text-[9px] font-bold text-blue-600 uppercase">Marketing Automation</p><h2 class="text-4xl font-black text-blue-600">${autoCount}</h2></div>
+                <div class="bold-card p-6 border-b-4 border-slate-900 text-center"><p class="text-[9px] font-bold text-slate-900 uppercase text-xs">Customer Success Program</p><h2 class="text-4xl font-black">${successCount}</h2></div>
             `;
 
+            // 1. Donut Chart
             if(chart1) chart1.destroy();
             chart1 = new Chart(document.getElementById('donutChart'), {
                 type: 'doughnut',
                 data: { 
                     labels: ['Marketing Automation', 'Customer Success Program'], 
-                    datasets: [{ 
-                        data: [autoCount, successCount], 
-                        backgroundColor: ['#2563eb', '#0f172a'],
-                        borderWidth: 5,
-                        borderColor: '#ffffff'
-                    }] 
+                    datasets: [{ data: [autoCount, successCount], backgroundColor: ['#2563eb', '#0f172a'], borderWidth: 4, borderColor: '#ffffff' }] 
                 },
                 options: { cutout: '70%', plugins: { legend: { display: false } } }
             });
-            
             document.getElementById('donut-legend').innerHTML = `
-                <div class="flex justify-between items-center text-[13px] font-black p-4 bg-blue-50 rounded-xl border-l-8 border-blue-600">
-                    <span>Marketing Automation</span>
-                    <span>${autoCount} Accounts <span class="text-blue-600 ml-2">(${total ? Math.round((autoCount/total)*100) : 0}%)</span></span>
+                <div class="flex justify-between items-center text-[11px] font-black p-3 bg-blue-50 rounded-xl border-l-4 border-blue-600">
+                    <span>Automation</span><span>${autoCount} (${total ? Math.round((autoCount/total)*100) : 0}%)</span>
                 </div>
-                <div class="flex justify-between items-center text-[13px] font-black p-4 bg-slate-50 rounded-xl border-l-8 border-slate-900">
-                    <span>Customer Success Program</span>
-                    <span>${successCount} Accounts <span class="text-slate-400 ml-2">(${total ? Math.round((successCount/total)*100) : 0}%)</span></span>
+                <div class="flex justify-between items-center text-[11px] font-black p-3 bg-slate-50 rounded-xl border-l-4 border-slate-900">
+                    <span>CS Program</span><span>${successCount} (${total ? Math.round((successCount/total)*100) : 0}%)</span>
                 </div>
             `;
+
+            // 2. Bar Chart (Pipeline) - คืนชีพตามสั่ง
+            if(chart2) chart2.destroy();
+            const barData = STAGES.map(s => clients.filter(c => c.stage === s).length);
+            chart2 = new Chart(document.getElementById('barChart'), {
+                type: 'bar',
+                data: { 
+                    labels: STAGES.map(s => s.toUpperCase()), 
+                    datasets: [{ data: barData, backgroundColor: ['#0f172a', '#2563eb', '#f59e0b', '#10b981'], borderRadius: 5 }] 
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 10 } } } }
+                },
+                plugins: [{
+                    afterDatasetsDraw(chart) {
+                        const {ctx} = chart; ctx.textAlign = 'center'; ctx.font = 'bold 12px Plus Jakarta Sans';
+                        chart.getDatasetMeta(0).data.forEach((bar, i) => {
+                            ctx.fillStyle = '#0f172a'; 
+                            ctx.fillText(`${barData[i]} (${total ? Math.round((barData[i]/total)*100) : 0}%)`, bar.x, bar.y - 12);
+                        });
+                    }
+                }]
+            });
         }
 
         function renderKanban() {
@@ -154,11 +172,8 @@
                     container.innerHTML += `
                         <div class="compact-card" data-id="${c.id}">
                             <span class="service-tag w-fit mb-2 block font-black">${c.service}</span>
-                            <h4 contenteditable="true" class="font-bold text-slate-900 text-[11px] mb-2 leading-tight underline decoration-slate-200">${c.name}</h4>
-                            <div class="flex items-center gap-2">
-                                <div class="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-900"><div style="width: ${c.progress}%" class="bg-blue-600 h-full"></div></div>
-                                <span class="text-[9px] font-black">${c.progress}%</span>
-                            </div>
+                            <h4 contenteditable="true" class="font-bold text-slate-900 text-[11px] mb-1 leading-tight underline decoration-slate-200">${c.name}</h4>
+                            <p class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">${c.industry}</p>
                         </div>
                     `;
                 });
