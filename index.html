@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkSmart — Customer Success Program</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f4f4f0; color: #0f172a; overflow-x: hidden; margin: 0; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #0f172a; border-radius: 10px; }
+
+    /* ── App shell ── */
+    .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: #0f172a; color: #fff;
+      display: flex; flex-direction: column;
+      padding: 24px 18px;
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; flex-shrink: 0;
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .logo-mark {
+      width: 36px; height: 36px; background: #2563eb; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 15px; color: #fff;
+      border: 1.5px solid rgba(255,255,255,.18); flex-shrink: 0;
+    }
+    .logo-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: -.01em; line-height: 1.2; }
+    .logo-sub  { font-size: 8px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .08em; }
+
+    .nav-section { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: #334155; margin-bottom: 8px; padding-left: 10px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 9px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; cursor: pointer; color: #64748b;
+      background: none; border: none; text-align: left; font-family: inherit;
+      transition: all .15s; margin-bottom: 2px;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+    .nav-btn.active { background: #2563eb; color: #fff; }
+    .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .4; flex-shrink: 0; }
+    .nav-btn.active .nav-dot { opacity: 1; background: #fff; }
+
+    .pipeline-mini { margin-top: 28px; }
+    .pipeline-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 10px; font-size: 11px; font-weight: 700;
+    }
+    .pipeline-count {
+      background: rgba(255,255,255,.08); border-radius: 5px;
+      padding: 1px 8px; font-size: 9px; font-weight: 800; color: #475569;
+    }
+
+    .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07); }
+    .sync-btn {
+      width: 100%; padding: 10px 0; border-radius: 10px;
+      background: #2563eb; color: #fff;
+      border: 1.5px solid rgba(255,255,255,.15);
+      font-family: inherit; font-size: 10px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .07em;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all .15s;
+    }
+    .sync-btn:hover { background: #1d4ed8; }
+    .sync-btn:active { transform: scale(.97); }
+    .sync-btn.loading { opacity: .7; cursor: wait; }
+
+    /* ── Main area ── */
+    .main { display: flex; flex-direction: column; overflow-y: auto; }
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(244,244,240,.88); backdrop-filter: blur(14px);
+      border-bottom: 1.5px solid #e2e8f0;
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-title { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: #94a3b8; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 30px; height: 30px; border-radius: 8px; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; }
+
+    .page { padding: 28px 32px; flex: 1; }
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 26px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -.03em; line-height: 1; }
+    .page-title span { color: #2563eb; }
+    .page-sub { font-size: 11px; font-weight: 600; color: #94a3b8; margin-top: 5px; }
+
+    /* ── Tab sections ── */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Stat cards ── */
+    .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+    .stat-card {
+      background: #fff; border: 2px solid #0f172a; border-radius: 16px;
+      box-shadow: 4px 4px 0 #0f172a; padding: 20px 22px; position: relative; overflow: hidden;
+    }
+    .stat-card.blue { border-bottom: 4px solid #2563eb; }
+    .stat-card-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: #94a3b8; margin-bottom: 8px; }
+    .stat-card.blue .stat-card-label { color: #2563eb; }
+    .stat-card-num { font-size: 38px; font-weight: 900; line-height: 1; color: #0f172a; }
+    .stat-card.blue .stat-card-num { color: #2563eb; }
+    .stat-card-trend { font-size: 9px; font-weight: 700; color: #10b981; margin-top: 5px; }
+    .stat-card.blue .stat-card-trend { color: #2563eb; }
+
+    /* ── Charts ── */
+    .charts-row { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+    .chart-card {
+      background: #fff; border: 2px solid #0f172a; border-radius: 16px;
+      box-shadow: 4px 4px 0 #0f172a; padding: 22px;
+    }
+    .chart-card-title {
+      font-size: 8px; font-weight: 900; text-transform: uppercase; font-style: italic; letter-spacing: .04em;
+      padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1.5px solid #f1f5f9;
+    }
+    .donut-wrap { height: 150px; display: flex; justify-content: center; margin-bottom: 14px; }
+    .legend-pill {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; font-weight: 800; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px;
+    }
+    .legend-pill-count { font-size: 10px; font-weight: 600; color: #64748b; }
+    .bar-wrap { height: 210px; }
+
+    /* ── Kanban ── */
+    .kanban-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+    .stage-col {
+      border: 2px solid #0f172a; border-radius: 18px; padding: 13px 11px;
+      min-height: 65vh;
+    }
+    .stage-col-head {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 11px; margin-bottom: 12px; border-bottom: 1.5px solid rgba(15,23,42,.08);
+    }
+    .stage-col-label { font-size: 9px; font-weight: 900; text-transform: uppercase; font-style: italic; }
+    .stage-col-count {
+      font-size: 9px; font-weight: 900;
+      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+    }
+    .compact-card {
+      background: #fff; border: 1.5px solid #0f172a; border-radius: 10px;
+      box-shadow: 2px 2px 0 #0f172a; padding: 10px 10px;
+      margin-bottom: 9px; cursor: grab; position: relative;
+      transition: transform .12s, box-shadow .12s;
+    }
+    .compact-card:hover { transform: translateY(-1px); box-shadow: 3px 3px 0 #0f172a; }
+    .service-tag {
+      font-size: 7px; font-weight: 900; padding: 2px 7px; border-radius: 4px;
+      background: #0f172a; color: white; text-transform: uppercase; display: inline-block; margin-bottom: 6px;
+    }
+    .compact-card-name { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; color: #0f172a; margin-bottom: 3px; }
+    .compact-card-industry { font-size: 8px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+    .btn-del { position: absolute; top: 7px; right: 7px; opacity: 0; transition: .2s; color: #ef4444; font-size: 10px; font-weight: bold; cursor: pointer; }
+    .compact-card:hover .btn-del { opacity: 1; }
+
+    /* ── Impact / Success Hub ── */
+    .impact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+    .impact-card {
+      background: #fff; border: 2px solid #0f172a; border-radius: 16px;
+      box-shadow: 4px 4px 0 #0f172a; padding: 20px;
+      position: relative; display: flex; flex-direction: column; gap: 14px;
+      border-left: 5px solid #10b981;
+    }
+    .impact-service-badge {
+      position: absolute; top: 0; right: 0;
+      background: #0f172a; color: #fff; padding: 3px 12px;
+      font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em;
+      border-radius: 0 14px 0 10px;
+    }
+    .impact-top { display: flex; align-items: flex-start; justify-content: space-between; padding-top: 12px; }
+    .impact-name { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: -.03em; color: #0f172a; margin-bottom: 4px; }
+    .impact-meta { font-size: 8px; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: .1em; }
+    .impact-num-box {
+      border: 2px solid #0f172a; padding: 7px 12px; border-radius: 10px;
+      background: #f8fafc; text-align: center; min-width: 62px;
+    }
+    .impact-num-label { font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; display: block; color: #94a3b8; margin-bottom: 2px; }
+    .impact-num-val { font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1; display: block; }
+    .impact-results { border-top: 1.5px solid #f1f5f9; padding-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+    .result-line {
+      border-left: 3px solid #10b981; padding: 6px 11px;
+      background: #f0fdf4; border-radius: 0 8px 8px 0;
+      font-size: 12px; font-weight: 700; font-style: italic; color: #0f172a;
+    }
+
+    /* ── Loading / empty ── */
+    .loading-state { text-align: center; padding: 60px; color: #94a3b8; font-size: 13px; font-weight: 700; }
+
+    /* ── Drag-over highlight ── */
+    .stage-col.drag-target { outline: 2px dashed #2563eb; outline-offset: 3px; }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .kanban-grid { grid-template-columns: repeat(2,1fr); }
+      .stat-row { grid-template-columns: 1fr; }
+      .charts-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-wrap">
+      <div class="logo-mark">W</div>
+      <div>
+        <div class="logo-name">WorkSmart</div>
+        <div class="logo-sub">CS Program</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Menu</div>
+    <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn active">
+      <span class="nav-dot"></span> Dashboard
+    </button>
+    <button onclick="switchTab('portfolio')" id="nav-portfolio" class="nav-btn">
+      <span class="nav-dot"></span> Portfolio
+    </button>
+    <button onclick="switchTab('impact')" id="nav-impact" class="nav-btn">
+      <span class="nav-dot"></span> Success Hub
+    </button>
+
+    <div class="pipeline-mini" id="pipeline-mini">
+      <div class="nav-section" style="margin-top:0; margin-bottom:8px;">Pipeline</div>
+      <div class="pipeline-item"><span style="color:#64748b;font-weight:800;font-size:11px">Leads</span><span class="pipeline-count" id="mini-leads">0</span></div>
+      <div class="pipeline-item"><span style="color:#2563eb;font-weight:800;font-size:11px">Pitching</span><span class="pipeline-count" id="mini-pitching">0</span></div>
+      <div class="pipeline-item"><span style="color:#f59e0b;font-weight:800;font-size:11px">Implement</span><span class="pipeline-count" id="mini-implement">0</span></div>
+      <div class="pipeline-item"><span style="color:#10b981;font-weight:800;font-size:11px">Ongoing</span><span class="pipeline-count" id="mini-ongoing">0</span></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="sync-btn" id="sync-btn" onclick="fetchData()">
+        <span id="sync-icon">⟳</span> Sync & Refresh
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+      <div class="topbar-right">
+        <span style="font-size:10px;font-weight:700;color:#94a3b8" id="topbar-date"></span>
+        <div class="avatar">CS</div>
+      </div>
+    </div>
+
+    <div class="page">
+
+      <!-- Dashboard -->
+      <div class="tab-content active" id="tab-overview">
+        <div class="page-header">
+          <div class="page-title">Customer Success <span>Dashboard</span></div>
+          <div class="page-sub" id="dash-sub">Loading data…</div>
+        </div>
+        <div class="stat-row" id="summary-stats"></div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-card-title">Service Distribution</div>
+            <div class="donut-wrap"><canvas id="donutChart"></canvas></div>
+            <div id="donut-legend"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title" style="text-align:center">Pipeline Overview · Accounts by Stage</div>
+            <div class="bar-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio -->
+      <div class="tab-content" id="tab-portfolio">
+        <div class="page-header">
+          <div class="page-title">Client <span>Portfolio</span></div>
+          <div class="page-sub">Drag cards between stages to update the pipeline</div>
+        </div>
+        <div class="kanban-grid">
+          <div class="stage-col" style="background:#f8fafc" id="leads">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#0f172a">01. Leads</span>
+              <span class="stage-col-count" style="color:#0f172a;background:#f1f5f9" id="cnt-leads">0</span>
+            </div>
+          </div>
+          <div class="stage-col" style="background:#eff6ff" id="pitching">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#2563eb">02. Pitching</span>
+              <span class="stage-col-count" style="color:#2563eb;background:#dbeafe" id="cnt-pitching">0</span>
+            </div>
+          </div>
+          <div class="stage-col" style="background:#fffbeb" id="implement">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#f59e0b">03. Implement</span>
+              <span class="stage-col-count" style="color:#f59e0b;background:#fef3c7" id="cnt-implement">0</span>
+            </div>
+          </div>
+          <div class="stage-col" style="background:#f0fdf4" id="ongoing">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#10b981">04. Ongoing</span>
+              <span class="stage-col-count" style="color:#10b981;background:#d1fae5" id="cnt-ongoing">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Hub -->
+      <div class="tab-content" id="tab-impact">
+        <div class="page-header">
+          <div class="page-title">Success <span>Hub</span></div>
+          <div class="page-sub" id="impact-sub">Ongoing clients with tracked results</div>
+        </div>
+        <div class="impact-grid" id="impact-grid"></div>
+      </div>
+
+    </div><!-- /page -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShtYYTaN6FAnvYPCBriBIY7D9Wgbr5pLDE1FzuNVsi8ByMMZ6CMNZNknkca1DkU3hRDyg5xNvX5Kxs/pub?output=csv';
+  const STAGES = ['leads', 'pitching', 'implement', 'ongoing'];
+  const STAGE_LABELS = { leads:'Dashboard', portfolio:'Portfolio', impact:'Success Hub' };
+  let clients = [];
+  let chart1, chart2;
+
+  // ── Date ────────────────────────────────────────────────────
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+
+  // ── Tab switching ────────────────────────────────────────────
+  const TAB_TITLES = { overview:'Dashboard', portfolio:'Portfolio', impact:'Success Hub' };
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('nav-' + tab).classList.add('active');
+    document.getElementById('topbar-title').textContent = TAB_TITLES[tab] || tab;
+    localStorage.setItem('ws-tab', tab);
+  }
+
+  // Restore saved tab
+  const savedTab = localStorage.getItem('ws-tab');
+  if (savedTab) switchTab(savedTab);
+
+  // ── Fetch data ───────────────────────────────────────────────
+  async function fetchData() {
+    const btn = document.getElementById('sync-btn');
+    const icon = document.getElementById('sync-icon');
+    btn.classList.add('loading');
+    icon.textContent = '⏳';
+    try {
+      const res = await fetch(`${SHEET_URL}&t=${Date.now()}`);
+      const csv = await res.text();
+      Papa.parse(csv, {
+        header: true, skipEmptyLines: true,
+        complete(results) {
+          clients = results.data.map((row, i) => ({
+            id: `c-${i}`,
+            name: row.Name || 'Account',
+            industry: row.Industry || 'Industry',
+            intent: row.Intent || 'Interested',
+            service: row.ServiceType || 'Marketing Automation',
+            strategy: row.Strategy || 'Strategy',
+            stage: (row.Stage || 'leads').toLowerCase().trim(),
+            impact: parseInt(row.Impact) || 0,
+            results: row.Results ? row.Results.split('|').map(r => r.trim()) : []
+          }));
+          renderAll();
+        }
+      });
+    } catch (e) {
+      console.error('Sync failed', e);
+    } finally {
+      btn.classList.remove('loading');
+      icon.textContent = '⟳';
+    }
+  }
+
+  function renderAll() { renderSummary(); renderKanban(); renderImpact(); updatePipelineMini(); }
+
+  // ── Summary / Charts ─────────────────────────────────────────
+  function renderSummary() {
+    const total = clients.length;
+    const autoCount = clients.filter(c => c.service === 'Marketing Automation').length;
+    const csCount   = clients.filter(c => c.service === 'Customer Success Program').length;
+
+    document.getElementById('dash-sub').textContent = `${total} accounts across 4 pipeline stages`;
+    document.getElementById('summary-stats').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-card-label">Total Portfolio</div>
+        <div class="stat-card-num">${total}</div>
+        <div class="stat-card-trend">↑ All active clients</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-card-label">Marketing Automation</div>
+        <div class="stat-card-num">${autoCount}</div>
+        <div class="stat-card-trend">↑ ${total ? Math.round(autoCount/total*100) : 0}% of portfolio</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Customer Success Program</div>
+        <div class="stat-card-num">${csCount}</div>
+        <div class="stat-card-trend">↑ ${total ? Math.round(csCount/total*100) : 0}% of portfolio</div>
+      </div>
+    `;
+
+    // Donut chart
+    if (chart1) chart1.destroy();
+    chart1 = new Chart(document.getElementById('donutChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Marketing Automation', 'Customer Success Program'],
+        datasets: [{ data: [autoCount, csCount], backgroundColor: ['#2563eb','#0f172a'], borderWidth: 5, borderColor: '#fff' }]
+      },
+      options: { cutout: '72%', plugins: { legend: { display: false } } }
+    });
+
+    document.getElementById('donut-legend').innerHTML = `
+      <div class="legend-pill" style="background:#eff6ff;border-left:4px solid #2563eb">
+        <span>Automation</span>
+        <span class="legend-pill-count">${autoCount} · ${total ? Math.round(autoCount/total*100) : 0}%</span>
+      </div>
+      <div class="legend-pill" style="background:#f8fafc;border-left:4px solid #0f172a">
+        <span>CS Program</span>
+        <span class="legend-pill-count">${csCount} · ${total ? Math.round(csCount/total*100) : 0}%</span>
+      </div>
+    `;
+
+    // Bar chart
+    if (chart2) chart2.destroy();
+    const barData  = STAGES.map(s => clients.filter(c => c.stage === s).length);
+    const barColors = ['#0f172a','#2563eb','#f59e0b','#10b981'];
+    chart2 = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: STAGES.map(s => s.toUpperCase()),
+        datasets: [{ data: barData, backgroundColor: barColors, borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          y: { display: false },
+          x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '800', size: 9, family: 'Plus Jakarta Sans' }, color: '#94a3b8' } }
+        }
+      },
+      plugins: [{
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          ctx.textAlign = 'center';
+          chart.getDatasetMeta(0).data.forEach((bar, i) => {
+            ctx.font = '800 11px Plus Jakarta Sans';
+            ctx.fillStyle = barColors[i];
+            ctx.fillText(`${barData[i]}`, bar.x, bar.y - 9);
+            ctx.font = '600 9px Plus Jakarta Sans';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(`${total ? Math.round(barData[i]/total*100) : 0}%`, bar.x, bar.y - 9 + 13);
+          });
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
+  // ── Kanban ────────────────────────────────────────────────────
+  function renderKanban() {
+    STAGES.forEach(s => {
+      const container = document.getElementById(s);
+      // Remove old cards (keep the header div)
+      const header = container.querySelector('.stage-col-head');
+      container.innerHTML = '';
+      container.appendChild(header);
+
+      const stageClients = clients.filter(c => c.stage === s);
+      document.getElementById(`cnt-${s}`).textContent = stageClients.length;
+
+      stageClients.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'compact-card';
+        card.dataset.id = c.id;
+        card.innerHTML = `
+          <span class="service-tag">${c.service === 'Marketing Automation' ? 'Automation' : 'CS Program'}</span>
+          <div class="compact-card-name" contenteditable="true">${c.name}</div>
+          <div class="compact-card-industry">${c.industry}</div>
+          <span class="btn-del" onclick="deleteClient('${c.id}')">✕</span>
+        `;
+        container.appendChild(card);
+      });
+    });
+    initSortable();
+    updatePipelineMini();
+  }
+
+  function deleteClient(id) {
+    clients = clients.filter(c => c.id !== id);
+    renderAll();
+  }
+
+  function initSortable() {
+    STAGES.forEach(stage => {
+      const el = document.getElementById(stage);
+      new Sortable(el, {
+        group: 'pipeline',
+        animation: 200,
+        filter: '.stage-col-head',
+        draggable: '.compact-card',
+        onEnd(evt) {
+          const client = clients.find(c => c.id === evt.item.dataset.id);
+          if (client) {
+            client.stage = evt.to.id;
+            renderSummary();
+            renderImpact();
+            updatePipelineMini();
+          }
+        }
+      });
+    });
+  }
+
+  // ── Impact ────────────────────────────────────────────────────
+  function renderImpact() {
+    const ongoing = clients.filter(c => c.stage === 'ongoing');
+    document.getElementById('impact-sub').textContent = `${ongoing.length} active ongoing client${ongoing.length !== 1 ? 's' : ''}`;
+    document.getElementById('impact-grid').innerHTML = ongoing.length === 0
+      ? `<div class="loading-state">No ongoing clients yet.<br>Move cards to the Ongoing stage in Portfolio.</div>`
+      : ongoing.map(c => `
+        <div class="impact-card">
+          <div class="impact-service-badge">${c.service === 'Marketing Automation' ? 'Automation' : 'CS Program'}</div>
+          <div class="impact-top">
+            <div>
+              <div class="impact-name" contenteditable="true">${c.name}</div>
+              <div class="impact-meta" contenteditable="true">${c.industry} · ${c.strategy}</div>
+            </div>
+            <div class="impact-num-box">
+              <span class="impact-num-label">Impact</span>
+              <span class="impact-num-val" contenteditable="true">${c.impact}%</span>
+            </div>
+          </div>
+          ${c.results.length > 0 ? `
+            <div class="impact-results">
+              ${c.results.map(r => `<div class="result-line" contenteditable="true">"${r}"</div>`).join('')}
+            </div>` : ''}
+        </div>
+      `).join('');
+  }
+
+  // ── Pipeline mini counts ──────────────────────────────────────
+  function updatePipelineMini() {
+    STAGES.forEach(s => {
+      const el = document.getElementById('mini-' + s);
+      if (el) el.textContent = clients.filter(c => c.stage === s).length;
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  window.onload = fetchData;
+</script>
+</body>
+</html>
