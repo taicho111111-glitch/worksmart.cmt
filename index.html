@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkSmart — Customer Success Program</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,700;1,800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f4f4f0; color: #0f172a; overflow-x: hidden; margin: 0; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #0f172a; border-radius: 10px; }
+
+    /* ── App shell ── */
+    .app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: #0f172a; color: #fff;
+      display: flex; flex-direction: column;
+      padding: 24px 18px;
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; flex-shrink: 0;
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .logo-mark {
+      width: 36px; height: 36px; background: #2563eb; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 15px; color: #fff;
+      border: 1.5px solid rgba(255,255,255,.18); flex-shrink: 0;
+    }
+    .logo-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: -.01em; line-height: 1.2; }
+    .logo-sub  { font-size: 8px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: .08em; }
+
+    .nav-section { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; color: #334155; margin-bottom: 8px; padding-left: 10px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 9px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; cursor: pointer; color: #64748b;
+      background: none; border: none; text-align: left; font-family: inherit;
+      transition: all .15s; margin-bottom: 2px;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+    .nav-btn.active { background: #2563eb; color: #fff; }
+    .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .4; flex-shrink: 0; }
+    .nav-btn.active .nav-dot { opacity: 1; background: #fff; }
+
+    .pipeline-mini { margin-top: 28px; }
+    .pipeline-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 10px; font-size: 11px; font-weight: 700;
+    }
+    .pipeline-count {
+      background: rgba(255,255,255,.08); border-radius: 5px;
+      padding: 1px 8px; font-size: 9px; font-weight: 800; color: #475569;
+    }
+
+    .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.07); }
+    .sync-btn {
+      width: 100%; padding: 10px 0; border-radius: 10px;
+      background: #2563eb; color: #fff;
+      border: 1.5px solid rgba(255,255,255,.15);
+      font-family: inherit; font-size: 10px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .07em;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all .15s;
+    }
+    .sync-btn:hover { background: #1d4ed8; }
+    .sync-btn:active { transform: scale(.97); }
+    .sync-btn.loading { opacity: .7; cursor: wait; }
+
+    /* ── Main area ── */
+    .main { display: flex; flex-direction: column; overflow-y: auto; }
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(244,244,240,.88); backdrop-filter: blur(14px);
+      border-bottom: 1.5px solid #e2e8f0;
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-title { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: #94a3b8; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 30px; height: 30px; border-radius: 8px; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; }
+
+    .page { padding: 28px 32px; flex: 1; }
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 26px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -.03em; line-height: 1; }
+    .page-title span { color: #2563eb; }
+    .page-sub { font-size: 11px; font-weight: 600; color: #94a3b8; margin-top: 5px; }
+
+    /* ── Tab sections ── */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Stat cards ── */
+    .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+    .stat-card {
+      background: #fff; border: 2px solid #0f172a; border-radius: 16px;
+      box-shadow: 4px 4px 0 #0f172a; padding: 20px 22px; position: relative; overflow: hidden;
+    }
+    .stat-card.blue { border-bottom: 4px solid #2563eb; }
+    .stat-card-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: #94a3b8; margin-bottom: 8px; }
+    .stat-card.blue .stat-card-label { color: #2563eb; }
+    .stat-card-num { font-size: 38px; font-weight: 900; line-height: 1; color: #0f172a; }
+    .stat-card.blue .stat-card-num { color: #2563eb; }
+    .stat-card-trend { font-size: 9px; font-weight: 700; color: #10b981; margin-top: 5px; }
+    .stat-card.blue .stat-card-trend { color: #2563eb; }
+
+    /* ── Charts ── */
+    .charts-row { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+    .chart-card {
+      background: #fff; border: 2px solid #0f172a; border-radius: 16px;
+      box-shadow: 4px 4px 0 #0f172a; padding: 22px;
+    }
+    .chart-card-title {
+      font-size: 8px; font-weight: 900; text-transform: uppercase; font-style: italic; letter-spacing: .04em;
+      padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1.5px solid #f1f5f9;
+    }
+    .donut-wrap { height: 150px; display: flex; justify-content: center; margin-bottom: 14px; }
+    .legend-pill {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; font-weight: 800; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px;
+    }
+    .legend-pill-count { font-size: 10px; font-weight: 600; color: #64748b; }
+    .bar-wrap { height: 210px; }
+
+    /* ── Kanban ── */
+    .kanban-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+    .stage-col {
+      border: 2px solid #0f172a; border-radius: 18px; padding: 13px 11px;
+      min-height: 65vh;
+    }
+    .stage-col-head {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 11px; margin-bottom: 12px; border-bottom: 1.5px solid rgba(15,23,42,.08);
+    }
+    .stage-col-label { font-size: 9px; font-weight: 900; text-transform: uppercase; font-style: italic; }
+    .stage-col-count {
+      font-size: 9px; font-weight: 900;
+      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+    }
+    .compact-card {
+      background: #fff; border: 1.5px solid #0f172a; border-radius: 10px;
+      box-shadow: 2px 2px 0 #0f172a; padding: 10px 10px;
+      margin-bottom: 9px; cursor: grab; position: relative;
+      transition: transform .12s, box-shadow .12s;
+    }
+    .compact-card:hover { transform: translateY(-1px); box-shadow: 3px 3px 0 #0f172a; }
+    .service-tag {
+      font-size: 7px; font-weight: 900; padding: 2px 7px; border-radius: 4px;
+      background: #0f172a; color: white; text-transform: uppercase; display: inline-block; margin-bottom: 6px;
+    }
+    .compact-card-name { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; color: #0f172a; margin-bottom: 3px; }
+    .compact-card-industry { font-size: 8px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+    .btn-del { position: absolute; top: 7px; right: 7px; opacity: 0; transition: .2s; color: #ef4444; font-size: 10px; font-weight: bold; cursor: pointer; }
+    .compact-card:hover .btn-del { opacity: 1; }
+
+    /* ── Impact / Success Hub ── */
+    .impact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+    .impact-card {
+      background: #fff; border: 2px solid #0f172a; border-radius: 16px;
+      box-shadow: 4px 4px 0 #0f172a; padding: 20px;
+      position: relative; display: flex; flex-direction: column; gap: 14px;
+      border-left: 5px solid #10b981;
+    }
+    .impact-service-badge {
+      position: absolute; top: 0; right: 0;
+      background: #0f172a; color: #fff; padding: 3px 12px;
+      font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em;
+      border-radius: 0 14px 0 10px;
+    }
+    .impact-top { display: flex; align-items: flex-start; justify-content: space-between; padding-top: 12px; }
+    .impact-name { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: -.03em; color: #0f172a; margin-bottom: 4px; }
+    .impact-meta { font-size: 8px; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: .1em; }
+    .impact-num-box {
+      border: 2px solid #0f172a; padding: 7px 12px; border-radius: 10px;
+      background: #f8fafc; text-align: center; min-width: 62px;
+    }
+    .impact-num-label { font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; display: block; color: #94a3b8; margin-bottom: 2px; }
+    .impact-num-val { font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1; display: block; }
+    .impact-results { border-top: 1.5px solid #f1f5f9; padding-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+    .result-line {
+      border-left: 3px solid #10b981; padding: 6px 11px;
+      background: #f0fdf4; border-radius: 0 8px 8px 0;
+      font-size: 12px; font-weight: 700; font-style: italic; color: #0f172a;
+    }
+
+    /* ── Loading / empty ── */
+    .loading-state { text-align: center; padding: 60px; color: #94a3b8; font-size: 13px; font-weight: 700; }
+
+    /* ── My Tasks ── */
+    .tasks-layout { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+    .team-col {
+      background: #fff; border: 2px solid #0f172a; border-radius: 18px;
+      box-shadow: 4px 4px 0 #0f172a; overflow: hidden;
+    }
+    .team-col-head {
+      padding: 16px 18px 14px; border-bottom: 2px solid #0f172a;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .team-col-label {
+      font-size: 10px; font-weight: 900; text-transform: uppercase; font-style: italic;
+      letter-spacing: .04em; display: flex; align-items: center; gap: 8px;
+    }
+    .team-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .team-count {
+      font-size: 9px; font-weight: 900; padding: 2px 9px;
+      border-radius: 20px; border: 1.5px solid currentColor;
+    }
+    .team-col-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+    /* Task card */
+    .task-card {
+      border: 1.5px solid #e2e8f0; border-radius: 12px;
+      background: #fafafa; overflow: hidden;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .task-card:hover { border-color: #0f172a; box-shadow: 2px 2px 0 #0f172a; }
+    .task-main {
+      padding: 11px 12px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+    }
+    .task-status-btn {
+      flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px;
+      border: 2px solid #e2e8f0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; transition: all .15s; margin-top: 1px; background: #fff;
+    }
+    .task-status-btn.in-progress { border-color: #f59e0b; background: #fffbeb; }
+    .task-status-btn.done { border-color: #10b981; background: #f0fdf4; }
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 12px; font-weight: 800; color: #0f172a; margin-bottom: 4px;
+      line-height: 1.3; word-break: break-word;
+    }
+    .task-title.done-text { text-decoration: line-through; color: #94a3b8; }
+    .task-status-pill {
+      font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em;
+      padding: 2px 7px; border-radius: 20px; display: inline-block;
+    }
+    .pill-not-started { background: #f1f5f9; color: #64748b; }
+    .pill-in-progress  { background: #fef3c7; color: #92400e; }
+    .pill-done         { background: #d1fae5; color: #065f46; }
+    .task-del-btn {
+      flex-shrink: 0; color: #ef4444; font-size: 11px; font-weight: 900;
+      opacity: 0; transition: .15s; cursor: pointer; padding: 0 2px; line-height: 1; margin-top: 2px;
+    }
+    .task-card:hover .task-del-btn { opacity: 1; }
+
+    /* Sub-tasks */
+    .subtask-section { border-top: 1px solid #f1f5f9; padding: 8px 12px 10px; display: none; }
+    .subtask-section.open { display: block; }
+    .subtask-row {
+      display: flex; align-items: center; gap: 8px; padding: 5px 0;
+      border-bottom: 1px dashed #f1f5f9;
+    }
+    .subtask-row:last-of-type { border-bottom: none; }
+    .subtask-check {
+      width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid #cbd5e1;
+      cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 8px; transition: all .1s; background: #fff;
+    }
+    .subtask-check.checked { background: #10b981; border-color: #10b981; color: #fff; }
+    .subtask-text {
+      font-size: 11px; font-weight: 600; color: #475569; flex: 1;
+      line-height: 1.3; cursor: pointer;
+    }
+    .subtask-text.done-text { text-decoration: line-through; color: #94a3b8; }
+    .subtask-del { color: #ef4444; font-size: 9px; cursor: pointer; opacity: 0; transition: .1s; font-weight: 900; }
+    .subtask-row:hover .subtask-del { opacity: 1; }
+
+    /* Expand toggle */
+    .task-expand {
+      font-size: 9px; font-weight: 800; color: #64748b; cursor: pointer;
+      padding: 5px 12px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; gap: 4px;
+      transition: color .1s; user-select: none;
+    }
+    .task-expand:hover { color: #0f172a; }
+    .expand-arrow { transition: transform .2s; display: inline-block; }
+    .expand-arrow.open { transform: rotate(90deg); }
+
+    /* Add subtask input */
+    .add-subtask-row { display: flex; gap: 6px; margin-top: 8px; }
+    .add-subtask-input {
+      flex: 1; border: 1.5px solid #e2e8f0; border-radius: 7px;
+      padding: 5px 9px; font-size: 11px; font-weight: 600; font-family: inherit;
+      outline: none; color: #0f172a; background: #fff;
+    }
+    .add-subtask-input:focus { border-color: #2563eb; }
+    .add-subtask-btn {
+      background: #0f172a; color: #fff; border: none; border-radius: 7px;
+      padding: 5px 10px; font-size: 11px; font-weight: 900; cursor: pointer;
+      font-family: inherit; transition: background .1s;
+    }
+    .add-subtask-btn:hover { background: #1e293b; }
+
+    /* Priority badges */
+    .priority-badge {
+      font-size: 7px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em;
+      padding: 2px 7px; border-radius: 20px; display: inline-block; margin-left: 5px;
+    }
+    .priority-high   { background: #fee2e2; color: #991b1b; }
+    .priority-medium { background: #fef3c7; color: #92400e; }
+    .priority-low    { background: #f0fdf4; color: #065f46; }
+
+    /* Due date */
+    .task-due {
+      font-size: 9px; font-weight: 700; color: #94a3b8; margin-top: 3px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .task-due.overdue { color: #ef4444; font-weight: 800; }
+    .task-due.today   { color: #f59e0b; font-weight: 800; }
+
+    /* Add task */
+    .add-task-wrap { padding: 10px 12px 12px; border-top: 2px dashed #e2e8f0; }
+    .add-task-input {
+      width: 100%; border: 1.5px solid #e2e8f0; border-radius: 9px;
+      padding: 8px 12px; font-size: 12px; font-weight: 700; font-family: inherit;
+      outline: none; color: #0f172a; background: #f8fafc; margin-bottom: 6px;
+    }
+    .add-task-input:focus { border-color: #0f172a; background: #fff; }
+    .add-task-row { display: flex; gap: 6px; margin-bottom: 6px; }
+    .add-task-row-2 { display: flex; gap: 6px; }
+    .add-task-status-sel {
+      flex: 1; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      padding: 6px 8px; font-size: 10px; font-weight: 800; font-family: inherit;
+      outline: none; color: #0f172a; background: #fff; cursor: pointer;
+    }
+    .add-task-date {
+      flex: 1; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      padding: 6px 8px; font-size: 10px; font-weight: 700; font-family: inherit;
+      outline: none; color: #0f172a; background: #fff; cursor: pointer;
+    }
+    .add-task-btn {
+      background: #0f172a; color: #fff; border: none; border-radius: 8px;
+      padding: 6px 14px; font-size: 10px; font-weight: 900; cursor: pointer;
+      font-family: inherit; white-space: nowrap; transition: all .1s;
+      box-shadow: 2px 2px 0 rgba(0,0,0,.2);
+    }
+    .add-task-btn:hover { background: #1e293b; }
+    .add-task-btn:active { transform: translateY(1px); }
+
+    /* Export button */
+    .tasks-export-btn {
+      margin-left: auto; background: #fff; border: 2px solid #0f172a;
+      border-radius: 10px; padding: 8px 16px; font-size: 10px; font-weight: 900;
+      font-family: inherit; cursor: pointer; text-transform: uppercase; letter-spacing: .06em;
+      box-shadow: 3px 3px 0 #0f172a; transition: all .12s; display: flex; align-items: center; gap: 6px;
+    }
+    .tasks-export-btn:hover { background: #f8fafc; }
+    .tasks-export-btn:active { transform: translateY(1px); box-shadow: 1px 1px 0 #0f172a; }
+
+    /* Tasks header row */
+    .tasks-header-row { display: flex; align-items: center; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+
+    /* Tasks summary bar */
+    .tasks-summary {
+      display: flex; gap: 12px; margin-bottom: 20px;
+    }
+    .tasks-sum-chip {
+      background: #fff; border: 2px solid #0f172a; border-radius: 12px;
+      padding: 12px 18px; box-shadow: 3px 3px 0 #0f172a;
+      display: flex; flex-direction: column; gap: 4px; min-width: 100px;
+    }
+    .tasks-sum-num { font-size: 28px; font-weight: 900; line-height: 1; }
+    .tasks-sum-label { font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: #94a3b8; }
+
+    @media (max-width: 900px) {
+      .tasks-layout { grid-template-columns: 1fr; }
+      .tasks-summary { flex-wrap: wrap; }
+    }
+
+    /* ── Drag-over highlight ── */
+    .stage-col.drag-target { outline: 2px dashed #2563eb; outline-offset: 3px; }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .kanban-grid { grid-template-columns: repeat(2,1fr); }
+      .stat-row { grid-template-columns: 1fr; }
+      .charts-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-wrap">
+      <div class="logo-mark">W</div>
+      <div>
+        <div class="logo-name">WorkSmart</div>
+        <div class="logo-sub">CS Program</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Menu</div>
+    <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn active">
+      <span class="nav-dot"></span> Dashboard
+    </button>
+    <button onclick="switchTab('portfolio')" id="nav-portfolio" class="nav-btn">
+      <span class="nav-dot"></span> Portfolio
+    </button>
+    <button onclick="switchTab('impact')" id="nav-impact" class="nav-btn">
+      <span class="nav-dot"></span> Success Hub
+    </button>
+    <button onclick="switchTab('tasks')" id="nav-tasks" class="nav-btn">
+      <span class="nav-dot"></span> My Tasks
+    </button>
+
+    <div class="pipeline-mini" id="pipeline-mini">
+      <div class="nav-section" style="margin-top:0; margin-bottom:8px;">Pipeline</div>
+      <div class="pipeline-item"><span style="color:#64748b;font-weight:800;font-size:11px">Leads</span><span class="pipeline-count" id="mini-leads">0</span></div>
+      <div class="pipeline-item"><span style="color:#2563eb;font-weight:800;font-size:11px">Pitching</span><span class="pipeline-count" id="mini-pitching">0</span></div>
+      <div class="pipeline-item"><span style="color:#f59e0b;font-weight:800;font-size:11px">Implement</span><span class="pipeline-count" id="mini-implement">0</span></div>
+      <div class="pipeline-item"><span style="color:#10b981;font-weight:800;font-size:11px">Ongoing</span><span class="pipeline-count" id="mini-ongoing">0</span></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="sync-btn" id="sync-btn" onclick="fetchData()">
+        <span id="sync-icon">⟳</span> Sync & Refresh
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+      <div class="topbar-right">
+        <span style="font-size:10px;font-weight:700;color:#94a3b8" id="topbar-date"></span>
+        <div class="avatar">CS</div>
+      </div>
+    </div>
+
+    <div class="page">
+
+      <!-- Dashboard -->
+      <div class="tab-content active" id="tab-overview">
+        <div class="page-header">
+          <div class="page-title">Customer Success <span>Dashboard</span></div>
+          <div class="page-sub" id="dash-sub">Loading data…</div>
+        </div>
+        <div class="stat-row" id="summary-stats"></div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-card-title">Service Distribution</div>
+            <div class="donut-wrap"><canvas id="donutChart"></canvas></div>
+            <div id="donut-legend"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title" style="text-align:center">Pipeline Overview · Accounts by Stage</div>
+            <div class="bar-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio -->
+      <div class="tab-content" id="tab-portfolio">
+        <div class="page-header">
+          <div class="page-title">Client <span>Portfolio</span></div>
+          <div class="page-sub">Drag cards between stages to update the pipeline</div>
+        </div>
+        <div class="kanban-grid">
+          <div class="stage-col" style="background:#f8fafc" id="leads">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#0f172a">01. Leads</span>
+              <span class="stage-col-count" style="color:#0f172a;background:#f1f5f9" id="cnt-leads">0</span>
+            </div>
+          </div>
+          <div class="stage-col" style="background:#eff6ff" id="pitching">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#2563eb">02. Pitching</span>
+              <span class="stage-col-count" style="color:#2563eb;background:#dbeafe" id="cnt-pitching">0</span>
+            </div>
+          </div>
+          <div class="stage-col" style="background:#fffbeb" id="implement">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#f59e0b">03. Implement</span>
+              <span class="stage-col-count" style="color:#f59e0b;background:#fef3c7" id="cnt-implement">0</span>
+            </div>
+          </div>
+          <div class="stage-col" style="background:#f0fdf4" id="ongoing">
+            <div class="stage-col-head">
+              <span class="stage-col-label" style="color:#10b981">04. Ongoing</span>
+              <span class="stage-col-count" style="color:#10b981;background:#d1fae5" id="cnt-ongoing">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Tasks -->
+      <div class="tab-content" id="tab-tasks">
+        <div class="page-header">
+          <div class="page-title">My <span>Tasks</span></div>
+          <div class="page-sub" id="tasks-sub">Track your work across teams</div>
+        </div>
+        <div class="tasks-header-row">
+          <div id="tasks-summary" style="display:flex;gap:12px;flex-wrap:wrap;flex:1"></div>
+          <button class="tasks-export-btn" onclick="exportTasksCSV()">↓ Export CSV</button>
+        </div>
+        <div class="tasks-layout">
+
+          <!-- Customer Success -->
+          <div class="team-col" id="team-col-cs">
+            <div class="team-col-head">
+              <div class="team-col-label" style="color:#2563eb">
+                <span class="team-dot" style="background:#2563eb"></span>
+                Customer Success
+              </div>
+              <span class="team-count" style="color:#2563eb" id="cnt-cs">0</span>
+            </div>
+            <div class="team-col-body" id="tasks-cs"></div>
+            <div class="add-task-wrap">
+              <input class="add-task-input" id="add-input-cs" placeholder="Add a task…" onkeydown="if(event.key==='Enter') addTask('cs')">
+              <div class="add-task-row">
+                <select class="add-task-status-sel" id="add-status-cs">
+                  <option value="not-started">Not Started</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+                <select class="add-task-status-sel" id="add-priority-cs">
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div class="add-task-row-2">
+                <input class="add-task-date" type="date" id="add-date-cs">
+                <button class="add-task-btn" onclick="addTask('cs')">+ Add</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategy -->
+          <div class="team-col" id="team-col-strategy">
+            <div class="team-col-head">
+              <div class="team-col-label" style="color:#f59e0b">
+                <span class="team-dot" style="background:#f59e0b"></span>
+                Strategy
+              </div>
+              <span class="team-count" style="color:#f59e0b" id="cnt-strategy">0</span>
+            </div>
+            <div class="team-col-body" id="tasks-strategy"></div>
+            <div class="add-task-wrap">
+              <input class="add-task-input" id="add-input-strategy" placeholder="Add a task…" onkeydown="if(event.key==='Enter') addTask('strategy')">
+              <div class="add-task-row">
+                <select class="add-task-status-sel" id="add-status-strategy">
+                  <option value="not-started">Not Started</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+                <select class="add-task-status-sel" id="add-priority-strategy">
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div class="add-task-row-2">
+                <input class="add-task-date" type="date" id="add-date-strategy">
+                <button class="add-task-btn" onclick="addTask('strategy')" style="background:#f59e0b;color:#0f172a">+ Add</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Line Activation -->
+          <div class="team-col" id="team-col-line">
+            <div class="team-col-head">
+              <div class="team-col-label" style="color:#10b981">
+                <span class="team-dot" style="background:#10b981"></span>
+                Line Activation
+              </div>
+              <span class="team-count" style="color:#10b981" id="cnt-line">0</span>
+            </div>
+            <div class="team-col-body" id="tasks-line"></div>
+            <div class="add-task-wrap">
+              <input class="add-task-input" id="add-input-line" placeholder="Add a task…" onkeydown="if(event.key==='Enter') addTask('line')">
+              <div class="add-task-row">
+                <select class="add-task-status-sel" id="add-status-line">
+                  <option value="not-started">Not Started</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+                <select class="add-task-status-sel" id="add-priority-line">
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div class="add-task-row-2">
+                <input class="add-task-date" type="date" id="add-date-line">
+                <button class="add-task-btn" onclick="addTask('line')" style="background:#10b981">+ Add</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Success Hub -->
+      <div class="tab-content" id="tab-impact">
+        <div class="page-header">
+          <div class="page-title">Success <span>Hub</span></div>
+          <div class="page-sub" id="impact-sub">Ongoing clients with tracked results</div>
+        </div>
+        <div class="impact-grid" id="impact-grid"></div>
+      </div>
+
+    </div><!-- /page -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vShtYYTaN6FAnvYPCBriBIY7D9Wgbr5pLDE1FzuNVsi8ByMMZ6CMNZNknkca1DkU3hRDyg5xNvX5Kxs/pub?output=csv';
+  const STAGES = ['leads', 'pitching', 'implement', 'ongoing'];
+  const STAGE_LABELS = { leads:'Dashboard', portfolio:'Portfolio', impact:'Success Hub' };
+  let clients = [];
+  let chart1, chart2;
+
+  // ── Date ────────────────────────────────────────────────────
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+
+  // ── Tab switching ────────────────────────────────────────────
+  const TAB_TITLES = { overview:'Dashboard', portfolio:'Portfolio', impact:'Success Hub', tasks:'My Tasks' };
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('nav-' + tab).classList.add('active');
+    document.getElementById('topbar-title').textContent = TAB_TITLES[tab] || tab;
+    localStorage.setItem('ws-tab', tab);
+  }
+
+  // Restore saved tab
+  const savedTab = localStorage.getItem('ws-tab');
+  if (savedTab) switchTab(savedTab);
+
+  // ── Fetch data ───────────────────────────────────────────────
+  async function fetchData() {
+    const btn = document.getElementById('sync-btn');
+    const icon = document.getElementById('sync-icon');
+    btn.classList.add('loading');
+    icon.textContent = '⏳';
+    try {
+      const res = await fetch(`${SHEET_URL}&t=${Date.now()}`);
+      const csv = await res.text();
+      Papa.parse(csv, {
+        header: true, skipEmptyLines: true,
+        complete(results) {
+          clients = results.data.map((row, i) => ({
+            id: `c-${i}`,
+            name: row.Name || 'Account',
+            industry: row.Industry || 'Industry',
+            intent: row.Intent || 'Interested',
+            service: row.ServiceType || 'Marketing Automation',
+            strategy: row.Strategy || 'Strategy',
+            stage: (row.Stage || 'leads').toLowerCase().trim(),
+            impact: parseInt(row.Impact) || 0,
+            results: row.Results ? row.Results.split('|').map(r => r.trim()) : []
+          }));
+          renderAll();
+        }
+      });
+    } catch (e) {
+      console.error('Sync failed', e);
+    } finally {
+      btn.classList.remove('loading');
+      icon.textContent = '⟳';
+    }
+  }
+
+  function renderAll() { renderSummary(); renderKanban(); renderImpact(); updatePipelineMini(); }
+
+  // ── Summary / Charts ─────────────────────────────────────────
+  function renderSummary() {
+    const total = clients.length;
+    const autoCount = clients.filter(c => c.service === 'Marketing Automation').length;
+    const csCount   = clients.filter(c => c.service === 'Customer Success Program').length;
+
+    document.getElementById('dash-sub').textContent = `${total} accounts across 4 pipeline stages`;
+    document.getElementById('summary-stats').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-card-label">Total Portfolio</div>
+        <div class="stat-card-num">${total}</div>
+        <div class="stat-card-trend">↑ All active clients</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-card-label">Marketing Automation</div>
+        <div class="stat-card-num">${autoCount}</div>
+        <div class="stat-card-trend">↑ ${total ? Math.round(autoCount/total*100) : 0}% of portfolio</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Customer Success Program</div>
+        <div class="stat-card-num">${csCount}</div>
+        <div class="stat-card-trend">↑ ${total ? Math.round(csCount/total*100) : 0}% of portfolio</div>
+      </div>
+    `;
+
+    // Donut chart
+    if (chart1) chart1.destroy();
+    chart1 = new Chart(document.getElementById('donutChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Marketing Automation', 'Customer Success Program'],
+        datasets: [{ data: [autoCount, csCount], backgroundColor: ['#2563eb','#0f172a'], borderWidth: 5, borderColor: '#fff' }]
+      },
+      options: { cutout: '72%', plugins: { legend: { display: false } } }
+    });
+
+    document.getElementById('donut-legend').innerHTML = `
+      <div class="legend-pill" style="background:#eff6ff;border-left:4px solid #2563eb">
+        <span>Automation</span>
+        <span class="legend-pill-count">${autoCount} · ${total ? Math.round(autoCount/total*100) : 0}%</span>
+      </div>
+      <div class="legend-pill" style="background:#f8fafc;border-left:4px solid #0f172a">
+        <span>CS Program</span>
+        <span class="legend-pill-count">${csCount} · ${total ? Math.round(csCount/total*100) : 0}%</span>
+      </div>
+    `;
+
+    // Bar chart
+    if (chart2) chart2.destroy();
+    const barData  = STAGES.map(s => clients.filter(c => c.stage === s).length);
+    const barColors = ['#0f172a','#2563eb','#f59e0b','#10b981'];
+    chart2 = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: STAGES.map(s => s.toUpperCase()),
+        datasets: [{ data: barData, backgroundColor: barColors, borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          y: { display: false },
+          x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '800', size: 9, family: 'Plus Jakarta Sans' }, color: '#94a3b8' } }
+        }
+      },
+      plugins: [{
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          ctx.textAlign = 'center';
+          chart.getDatasetMeta(0).data.forEach((bar, i) => {
+            ctx.font = '800 11px Plus Jakarta Sans';
+            ctx.fillStyle = barColors[i];
+            ctx.fillText(`${barData[i]}`, bar.x, bar.y - 9);
+            ctx.font = '600 9px Plus Jakarta Sans';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(`${total ? Math.round(barData[i]/total*100) : 0}%`, bar.x, bar.y - 9 + 13);
+          });
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
+  // ── Kanban ────────────────────────────────────────────────────
+  function renderKanban() {
+    STAGES.forEach(s => {
+      const container = document.getElementById(s);
+      // Remove old cards (keep the header div)
+      const header = container.querySelector('.stage-col-head');
+      container.innerHTML = '';
+      container.appendChild(header);
+
+      const stageClients = clients.filter(c => c.stage === s);
+      document.getElementById(`cnt-${s}`).textContent = stageClients.length;
+
+      stageClients.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'compact-card';
+        card.dataset.id = c.id;
+        card.innerHTML = `
+          <span class="service-tag">${c.service === 'Marketing Automation' ? 'Automation' : 'CS Program'}</span>
+          <div class="compact-card-name" contenteditable="true">${c.name}</div>
+          <div class="compact-card-industry">${c.industry}</div>
+          <span class="btn-del" onclick="deleteClient('${c.id}')">✕</span>
+        `;
+        container.appendChild(card);
+      });
+    });
+    initSortable();
+    updatePipelineMini();
+  }
+
+  function deleteClient(id) {
+    clients = clients.filter(c => c.id !== id);
+    renderAll();
+  }
+
+  function initSortable() {
+    STAGES.forEach(stage => {
+      const el = document.getElementById(stage);
+      new Sortable(el, {
+        group: 'pipeline',
+        animation: 200,
+        filter: '.stage-col-head',
+        draggable: '.compact-card',
+        onEnd(evt) {
+          const client = clients.find(c => c.id === evt.item.dataset.id);
+          if (client) {
+            client.stage = evt.to.id;
+            renderSummary();
+            renderImpact();
+            updatePipelineMini();
+          }
+        }
+      });
+    });
+  }
+
+  // ── Impact ────────────────────────────────────────────────────
+  function renderImpact() {
+    const ongoing = clients.filter(c => c.stage === 'ongoing');
+    document.getElementById('impact-sub').textContent = `${ongoing.length} active ongoing client${ongoing.length !== 1 ? 's' : ''}`;
+    document.getElementById('impact-grid').innerHTML = ongoing.length === 0
+      ? `<div class="loading-state">No ongoing clients yet.<br>Move cards to the Ongoing stage in Portfolio.</div>`
+      : ongoing.map(c => `
+        <div class="impact-card">
+          <div class="impact-service-badge">${c.service === 'Marketing Automation' ? 'Automation' : 'CS Program'}</div>
+          <div class="impact-top">
+            <div>
+              <div class="impact-name" contenteditable="true">${c.name}</div>
+              <div class="impact-meta" contenteditable="true">${c.industry} · ${c.strategy}</div>
+            </div>
+            <div class="impact-num-box">
+              <span class="impact-num-label">Impact</span>
+              <span class="impact-num-val" contenteditable="true">${c.impact}%</span>
+            </div>
+          </div>
+          ${c.results.length > 0 ? `
+            <div class="impact-results">
+              ${c.results.map(r => `<div class="result-line" contenteditable="true">"${r}"</div>`).join('')}
+            </div>` : ''}
+        </div>
+      `).join('');
+  }
+
+  // ── Pipeline mini counts ──────────────────────────────────────
+  function updatePipelineMini() {
+    STAGES.forEach(s => {
+      const el = document.getElementById('mini-' + s);
+      if (el) el.textContent = clients.filter(c => c.stage === s).length;
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // MY TASKS — localStorage-powered task tracker
+  // ══════════════════════════════════════════════════════════════
+  const TEAMS = [
+    { id:'cs',       label:'Customer Success', color:'#2563eb' },
+    { id:'strategy', label:'Strategy',         color:'#f59e0b' },
+    { id:'line',     label:'Line Activation',  color:'#10b981' },
+  ];
+  const STATUS_MAP = {
+    'not-started': { label:'Not Started', pill:'pill-not-started', icon:'',   btnClass:'' },
+    'in-progress': { label:'In Progress', pill:'pill-in-progress',  icon:'◐',  btnClass:'in-progress' },
+    'done':        { label:'Done',        pill:'pill-done',         icon:'✓',  btnClass:'done' },
+  };
+
+  let tasks = [];
+
+  function loadTasks() {
+    try { tasks = JSON.parse(localStorage.getItem('ws-tasks') || '[]'); } catch { tasks = []; }
+  }
+  function saveTasks() {
+    localStorage.setItem('ws-tasks', JSON.stringify(tasks));
+  }
+
+  function initTasks() {
+    loadTasks();
+    renderTasks();
+  }
+
+  function addTask(teamId) {
+    const input    = document.getElementById('add-input-' + teamId);
+    const selEl    = document.getElementById('add-status-' + teamId);
+    const priEl    = document.getElementById('add-priority-' + teamId);
+    const dateEl   = document.getElementById('add-date-' + teamId);
+    const title    = input.value.trim();
+    if (!title) { input.focus(); return; }
+    tasks.push({
+      id:       'task-' + Date.now(),
+      team:     teamId,
+      title,
+      status:   selEl.value,
+      priority: priEl.value,
+      dueDate:  dateEl.value || '',
+      subtasks: [],
+    });
+    input.value = '';
+    dateEl.value = '';
+    saveTasks();
+    renderTasks();
+    input.focus();
+  }
+
+  function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks();
+    renderTasks();
+  }
+
+  function cycleStatus(id) {
+    const order = ['not-started','in-progress','done'];
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    t.status = order[(order.indexOf(t.status) + 1) % order.length];
+    saveTasks();
+    renderTasks();
+  }
+
+  function addSubtask(taskId, inputEl) {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    const t = tasks.find(t => t.id === taskId);
+    if (!t) return;
+    t.subtasks.push({ id: 'sub-' + Date.now(), text, done: false });
+    inputEl.value = '';
+    saveTasks();
+    renderTasks();
+    // re-open subtask panel
+    setTimeout(() => {
+      const sec = document.getElementById('sub-section-' + taskId);
+      if (sec) sec.classList.add('open');
+      const arr = document.getElementById('expand-arrow-' + taskId);
+      if (arr) arr.classList.add('open');
+    }, 10);
+  }
+
+  function toggleSubtask(taskId, subId) {
+    const t = tasks.find(t => t.id === taskId);
+    if (!t) return;
+    const s = t.subtasks.find(s => s.id === subId);
+    if (s) s.done = !s.done;
+    saveTasks();
+    renderTasks();
+    // keep panel open
+    setTimeout(() => {
+      const sec = document.getElementById('sub-section-' + taskId);
+      if (sec) sec.classList.add('open');
+      const arr = document.getElementById('expand-arrow-' + taskId);
+      if (arr) arr.classList.add('open');
+    }, 10);
+  }
+
+  function deleteSubtask(taskId, subId) {
+    const t = tasks.find(t => t.id === taskId);
+    if (!t) return;
+    t.subtasks = t.subtasks.filter(s => s.id !== subId);
+    saveTasks();
+    renderTasks();
+  }
+
+  function toggleExpand(taskId) {
+    const sec = document.getElementById('sub-section-' + taskId);
+    const arr = document.getElementById('expand-arrow-' + taskId);
+    if (!sec) return;
+    sec.classList.toggle('open');
+    arr.classList.toggle('open');
+  }
+
+  function buildTaskCard(t) {
+    const st = STATUS_MAP[t.status] || STATUS_MAP['not-started'];
+    const subDone  = t.subtasks.filter(s => s.done).length;
+    const subTotal = t.subtasks.length;
+
+    // Priority badge
+    const priClass = { high:'priority-high', medium:'priority-medium', low:'priority-low' }[t.priority || 'medium'];
+    const priLabel = { high:'High', medium:'Medium', low:'Low' }[t.priority || 'medium'];
+    const priBadge = `<span class="priority-badge ${priClass}">${priLabel}</span>`;
+
+    // Due date
+    let dueHtml = '';
+    if (t.dueDate) {
+      const due  = new Date(t.dueDate + 'T00:00:00');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diffDays = Math.round((due - today) / 86400000);
+      let dueCls = 'task-due';
+      let dueText = due.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      if (t.status !== 'done') {
+        if (diffDays < 0)   { dueCls += ' overdue'; dueText = `Overdue · ${dueText}`; }
+        else if (diffDays === 0) { dueCls += ' today'; dueText = `Due Today · ${dueText}`; }
+        else if (diffDays <= 3)  { dueCls += ' today'; dueText = `${diffDays}d left · ${dueText}`; }
+      }
+      dueHtml = `<div class="${dueCls}" style="cursor:pointer;position:relative" title="Click to change date" onclick="openDatePicker('${t.id}')">
+        <span>📅</span>${dueText}
+        <input type="date" id="date-picker-${t.id}" value="${t.dueDate}"
+          style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"
+          onchange="updateDueDate('${t.id}', this.value)">
+      </div>`;
+    } else {
+      dueHtml = `<div class="task-due" style="cursor:pointer;color:#cbd5e1;position:relative" title="Set due date" onclick="openDatePicker('${t.id}')">
+        <span>📅</span>Set due date
+        <input type="date" id="date-picker-${t.id}"
+          style="position:absolute;opacity:0;width:0;height:0;pointer-events:none"
+          onchange="updateDueDate('${t.id}', this.value)">
+      </div>`;
+    }
+
+    const subtaskRows = t.subtasks.map(s => `
+      <div class="subtask-row">
+        <div class="subtask-check ${s.done ? 'checked' : ''}" onclick="toggleSubtask('${t.id}','${s.id}')">
+          ${s.done ? '✓' : ''}
+        </div>
+        <span class="subtask-text ${s.done ? 'done-text' : ''}">${escHtml(s.text)}</span>
+        <span class="subtask-del" onclick="deleteSubtask('${t.id}','${s.id}')">✕</span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="task-card" id="task-card-${t.id}">
+        <div class="task-main">
+          <div class="task-status-btn ${st.btnClass}" onclick="cycleStatus('${t.id}')" title="Click to change status">
+            ${st.icon}
+          </div>
+          <div class="task-body">
+            <div class="task-title ${t.status === 'done' ? 'done-text' : ''}">${escHtml(t.title)}${priBadge}</div>
+            <span class="task-status-pill ${st.pill}">${st.label}</span>
+            ${subTotal > 0 ? `<span style="font-size:8px;font-weight:700;color:#94a3b8;margin-left:6px">${subDone}/${subTotal} subtasks</span>` : ''}
+            ${dueHtml}
+          </div>
+          <span class="task-del-btn" onclick="deleteTask('${t.id}')">✕</span>
+        </div>
+        <div class="task-expand" onclick="toggleExpand('${t.id}')">
+          <span class="expand-arrow" id="expand-arrow-${t.id}">▶</span>
+          ${subTotal > 0 ? `Subtasks (${subTotal})` : 'Add subtask'}
+        </div>
+        <div class="subtask-section" id="sub-section-${t.id}">
+          ${subtaskRows}
+          <div class="add-subtask-row" style="margin-top:${subTotal > 0 ? '8px' : '0'}">
+            <input class="add-subtask-input" id="sub-input-${t.id}" placeholder="Add subtask…"
+              onkeydown="if(event.key==='Enter') addSubtask('${t.id}', this)">
+            <button class="add-subtask-btn" onclick="addSubtask('${t.id}', document.getElementById('sub-input-${t.id}'))">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function openDatePicker(taskId) {
+    const picker = document.getElementById('date-picker-' + taskId);
+    if (picker) picker.showPicker ? picker.showPicker() : picker.click();
+  }
+
+  function updateDueDate(taskId, newDate) {
+    const t = tasks.find(t => t.id === taskId);
+    if (!t) return;
+    t.dueDate = newDate;
+    saveTasks();
+    renderTasks();
+  }
+
+  function exportTasksCSV() {
+    const TEAM_LABELS = { cs:'Customer Success', strategy:'Strategy', line:'Line Activation' };
+    const rows = [['Team','Title','Status','Priority','Due Date','Subtasks Done','Subtasks Total']];
+    tasks.forEach(t => {
+      rows.push([
+        TEAM_LABELS[t.team] || t.team,
+        t.title,
+        t.status,
+        t.priority || 'medium',
+        t.dueDate || '',
+        t.subtasks.filter(s => s.done).length,
+        t.subtasks.length,
+      ]);
+    });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'worksmart-tasks.csv';
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderTasks() {
+    const total     = tasks.length;
+    const notStarted = tasks.filter(t => t.status === 'not-started').length;
+    const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+    const done       = tasks.filter(t => t.status === 'done').length;
+
+    // Summary chips
+    document.getElementById('tasks-summary').innerHTML = `
+      <div class="tasks-sum-chip">
+        <span class="tasks-sum-num">${total}</span>
+        <span class="tasks-sum-label">Total Tasks</span>
+      </div>
+      <div class="tasks-sum-chip" style="border-bottom:3px solid #f59e0b">
+        <span class="tasks-sum-num" style="color:#f59e0b">${inProgress}</span>
+        <span class="tasks-sum-label">In Progress</span>
+      </div>
+      <div class="tasks-sum-chip" style="border-bottom:3px solid #10b981">
+        <span class="tasks-sum-num" style="color:#10b981">${done}</span>
+        <span class="tasks-sum-label">Done</span>
+      </div>
+      <div class="tasks-sum-chip">
+        <span class="tasks-sum-num" style="color:#94a3b8">${notStarted}</span>
+        <span class="tasks-sum-label">Not Started</span>
+      </div>
+    `;
+
+    document.getElementById('tasks-sub').textContent =
+      `${total} task${total !== 1 ? 's' : ''} across 3 teams · ${done} completed`;
+
+    // Render each team column
+    TEAMS.forEach(team => {
+      const teamTasks = tasks.filter(t => t.team === team.id);
+      document.getElementById('cnt-' + team.id).textContent = teamTasks.length;
+      document.getElementById('tasks-' + team.id).innerHTML =
+        teamTasks.length === 0
+          ? `<div style="text-align:center;padding:20px 0;font-size:11px;font-weight:700;color:#cbd5e1">No tasks yet</div>`
+          : teamTasks.map(buildTaskCard).join('');
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  window.onload = () => { fetchData(); initTasks(); };
+</script>
+</body>
+</html>
