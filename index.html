@@ -217,9 +217,10 @@
 
     /* Task card */
     .task-card {
-      border: 1.5px solid #e2e8f0; border-radius: 12px;
+      border: 1.5px solid #94a3b8; border-radius: 12px;
       background: #fafafa; overflow: hidden;
       transition: border-color .15s, box-shadow .15s;
+      box-shadow: 1px 1px 0 rgba(15,23,42,.08);
     }
     .task-card:hover { border-color: #0f172a; box-shadow: 2px 2px 0 #0f172a; }
     .task-main {
@@ -1113,14 +1114,22 @@
     document.getElementById('tasks-sub').textContent =
       `${total} task${total !== 1 ? 's' : ''} across 3 teams · ${done} completed`;
 
-    // Render each team column
+    // Render each team column — done tasks always sink to the bottom
+    const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
     TEAMS.forEach(team => {
       const teamTasks = tasks.filter(t => t.team === team.id);
+      const sorted = [...teamTasks].sort((a, b) => {
+        const aDone = a.status === 'done' ? 1 : 0;
+        const bDone = b.status === 'done' ? 1 : 0;
+        if (aDone !== bDone) return aDone - bDone;
+        // Among non-done tasks, sort by priority (high first)
+        return (PRIORITY_ORDER[a.priority || 'medium'] || 1) - (PRIORITY_ORDER[b.priority || 'medium'] || 1);
+      });
       document.getElementById('cnt-' + team.id).textContent = teamTasks.length;
       document.getElementById('tasks-' + team.id).innerHTML =
-        teamTasks.length === 0
+        sorted.length === 0
           ? `<div style="text-align:center;padding:20px 0;font-size:11px;font-weight:700;color:#cbd5e1">No tasks yet</div>`
-          : teamTasks.map(buildTaskCard).join('');
+          : sorted.map(buildTaskCard).join('');
     });
   }
 
